@@ -126,9 +126,11 @@ Stage 2 is implemented Claude-first. The runtime currently accepts documented Cl
 
 ### Stage 3: provider observation
 
-- Add opt-in Codex hooks installation and removal.
-- Add opt-in Claude hooks and status-line integration.
-- Verify CLI and desktop paths separately. Report unsupported fields honestly.
+- Add opt-in Claude hooks and status-line integration first.
+- Verify Claude CLI and Desktop paths separately. Report unsupported fields honestly.
+- Add opt-in Codex hooks installation and removal after the Claude path is complete.
+
+The Claude-first portion is implemented without UI. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. CLI hook dispatch and receiver authentication have been exercised locally; a complete live model response, real usage snapshot, and Desktop coding session remain release-verification items. Codex is still intentionally deferred.
 
 ### Stage 4: notch experience
 

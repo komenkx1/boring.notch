@@ -1,10 +1,10 @@
 # Claude runtime contract
 
-Stage 2 provides the receiving and normalization layer for Claude. It does not change the user's Claude configuration yet. Hook and status-line installation stays opt-in for Stage 3.
+Stage 3 connects the Stage 2 receiver to Claude Code. Installation is explicit, previewable, idempotent, and reversible. It does not add agent UI to the notch yet.
 
 ## Local endpoints
 
-The app-owned receiver listens only on IPv4 loopback. The selected port is supplied by the running app.
+The app-owned receiver listens only on IPv4 loopback at `127.0.0.1:48763`. A fixed port lets Claude's user-level hooks work for CLI, IDE, and Desktop sessions without rewriting settings on every app launch.
 
 | Endpoint | Input |
 | --- | --- |
@@ -17,7 +17,29 @@ Both endpoints require:
 - `Content-Type: application/json`
 - a body no larger than 65,536 bytes by default
 
-The bearer token is generated from 32 random bytes and stored as a generic password in Keychain with `AfterFirstUnlockThisDeviceOnly` accessibility. The token must not be printed in logs, copied into diagnostics, or committed to configuration examples.
+The bearer token is generated from 32 random bytes and stored as a generic password in Keychain with `AfterFirstUnlockThisDeviceOnly` accessibility. Claude also needs the token in its user settings so the forwarding command inherits it as `BORING_NOTCH_AGENT_TOKEN`; the installer restricts the settings file to mode `0600`. The token must not be printed in logs, copied into diagnostics, or committed to configuration examples.
+
+## Install, inspect, and remove
+
+Run these commands from the repository root:
+
+```bash
+swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration preview
+swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration install
+swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration uninstall
+```
+
+`preview` prints the exact proposed `~/.claude/settings.json` with the bearer token redacted and does not write files. `install`:
+
+- creates `~/.claude/settings.json.boring-notch-backup` once;
+- preserves unrelated settings and existing hook groups;
+- installs one command forwarder for each observed Claude event;
+- wraps the existing status-line command, if present, and reproduces its output;
+- writes private files as mode `0600` and the forwarding executable as mode `0700`.
+
+`uninstall` removes only the Boring Notch hook handlers and token environment entry. It restores the previous status line unless the user replaced the Boring Notch status line after installation. The one-time backup remains available for manual recovery.
+
+The hook transport intentionally uses a command forwarder instead of Claude's direct HTTP hook type. The locally installed Claude runtime skipped direct HTTP hooks for `SessionStart`; command hooks cover that event and still forward the unchanged JSON body to the authenticated loopback endpoint with a one-second timeout.
 
 ## Accepted Claude signals
 
@@ -43,7 +65,9 @@ Claude may omit account rate limits until after its first API response. The stor
 
 ## Verification boundary
 
-Automated tests cover documented fixture decoding, lifecycle aggregation, response assembly, authentication, malformed JSON, body limits, and HTTP framing. A real Claude CLI and Claude Desktop integration test still belongs to Stage 3 because this stage does not install provider configuration.
+Automated tests cover documented fixture decoding, lifecycle aggregation, response assembly, authentication, malformed JSON, body limits, HTTP framing, settings preservation, idempotent installation, legacy-hook migration, and targeted removal.
+
+On the development Mac, the built app accepted authenticated hook and status snapshots with HTTP `204` and rejected an incorrect token with `401`. A real Claude CLI run executed the installed command hook successfully. That run could not complete a model response because the user's configured provider/model was unavailable, so response completion and real account usage remain fixture-verified rather than live-verified. Claude Desktop reads the same settings file, but its coding-session path still needs a separate live run before release.
 
 ## Provider references
 

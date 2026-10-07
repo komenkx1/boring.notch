@@ -12,8 +12,8 @@ public struct AgentBridgeTokenStore: Sendable {
     private let accountName: String
 
     public init(
-        serviceName: String = "theboringteam.boringnotch.agent-bridge",
-        accountName: String = "local-http-bearer-token"
+        serviceName: String = AgentBridgeConfiguration.keychainServiceName,
+        accountName: String = AgentBridgeConfiguration.keychainAccountName
     ) {
         self.serviceName = serviceName
         self.accountName = accountName

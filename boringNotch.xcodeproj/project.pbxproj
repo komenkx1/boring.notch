@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0B300012F00000300000001 /* AgentActivityRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B300022F00000300000002 /* AgentActivityRuntime.swift */; };
 		C0B200012F00000200000001 /* AgentActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0B200032F00000200000003 /* AgentActivityCore */; };
 		C0A100012F00000100000001 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C0A100032F00000100000003 /* LICENSE */; };
 		C0A100022F00000100000002 /* NOTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = C0A100042F00000100000004 /* NOTICE.md */; };
@@ -185,6 +186,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C0B300022F00000300000002 /* AgentActivityRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentActivityRuntime.swift; sourceTree = "<group>"; };
 		C0A100032F00000100000003 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
 		C0A100042F00000100000004 /* NOTICE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTICE.md; sourceTree = SOURCE_ROOT; };
 		C0A100062F00000100000006 /* THIRD_PARTY_LICENSES */ = {isa = PBXFileReference; lastKnownFileType = text; path = THIRD_PARTY_LICENSES; sourceTree = SOURCE_ROOT; };
@@ -518,6 +520,7 @@
 		147163B52C5D804B0068B555 /* managers */ = {
 			isa = PBXGroup;
 			children = (
+				C0B300022F00000300000002 /* AgentActivityRuntime.swift */,
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
@@ -921,6 +924,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0B300012F00000300000001 /* AgentActivityRuntime.swift in Sources */,
 				115C12EC2ED3D003009754CA /* OpenNotchHUD.swift in Sources */,
 				14C08BB92C8DE4B1000F8AA0 /* BoringCalendar.swift in Sources */,
 				5955950D2E900ED800C66711 /* ApplicationRelauncher.swift in Sources */,

@@ -2,6 +2,15 @@
 
 This file provides a prominent summary of changes made to the upstream GPLv3 project. Git history remains the detailed record.
 
+## 2026-10-08
+
+- Started the authenticated Claude receiver with the macOS application lifecycle on fixed loopback port `48763`.
+- Added a Claude integration CLI with exact redacted preview, idempotent install, targeted uninstall, and a one-time settings backup.
+- Preserved existing Claude hooks and status-line output while adding local event and usage forwarding.
+- Used command hook forwarders so `SessionStart` works on Claude versions that skip direct HTTP hooks for that event.
+- Added tests for settings preservation, idempotency, legacy-hook migration, status-line restoration, and user replacements.
+- Installed and exercised the Claude integration locally without adding agent UI or Codex support.
+
 ## 2026-10-07
 
 - Established the agent activity product scope and staged delivery plan.

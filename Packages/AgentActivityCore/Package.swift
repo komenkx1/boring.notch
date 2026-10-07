@@ -11,6 +11,10 @@ let package = Package(
         .library(
             name: "AgentActivityCore",
             targets: ["AgentActivityCore"]
+        ),
+        .executable(
+            name: "boring-notch-claude-integration",
+            targets: ["ClaudeIntegrationCommand"]
         )
     ],
     targets: [
@@ -20,6 +24,10 @@ let package = Package(
                 .linkedFramework("Network"),
                 .linkedFramework("Security")
             ]
+        ),
+        .executableTarget(
+            name: "ClaudeIntegrationCommand",
+            dependencies: ["AgentActivityCore"]
         ),
         .testTarget(
             name: "AgentActivityCoreTests",
