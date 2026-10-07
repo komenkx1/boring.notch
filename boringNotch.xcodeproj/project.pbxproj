@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0B200012F00000200000001 /* AgentActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0B200032F00000200000003 /* AgentActivityCore */; };
 		C0A100012F00000100000001 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C0A100032F00000100000003 /* LICENSE */; };
 		C0A100022F00000100000002 /* NOTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = C0A100042F00000100000004 /* NOTICE.md */; };
 		C0A100052F00000100000005 /* THIRD_PARTY_LICENSES in Resources */ = {isa = PBXBuildFile; fileRef = C0A100062F00000100000006 /* THIRD_PARTY_LICENSES */; };
@@ -344,6 +345,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0B200012F00000200000001 /* AgentActivityCore in Frameworks */,
 				111BEA5F2ED07A340079DD4E /* MacroVisionKit in Frameworks */,
 				9A987A102C73CA8D005CA465 /* Collections in Frameworks */,
 				1194E8852EA57D23009C82D6 /* SkyLightWindow in Frameworks */,
@@ -811,6 +813,7 @@
 			);
 			name = boringNotch;
 			packageProductDependencies = (
+				C0B200032F00000200000003 /* AgentActivityCore */,
 				14D032192C68F32E0096E6A1 /* LaunchAtLogin */,
 				14D0321C2C68F3350096E6A1 /* Sparkle */,
 				B18654382C6F4990000B926A /* KeyboardShortcuts */,
@@ -857,6 +860,7 @@
 			);
 			mainGroup = 14CEF4092C5CAED200855D72;
 			packageReferences = (
+				C0B200022F00000200000002 /* XCLocalSwiftPackageReference "Packages/AgentActivityCore" */,
 				14D032182C68F32E0096E6A1 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				14D0321B2C68F3350096E6A1 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				B18654372C6F4990000B926A /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
@@ -1361,6 +1365,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		C0B200022F00000200000002 /* XCLocalSwiftPackageReference "Packages/AgentActivityCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/AgentActivityCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		111BE95B2ECD71E10079DD4E /* XCRemoteSwiftPackageReference "AsyncXPCConnection" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1453,6 +1464,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		C0B200032F00000200000003 /* AgentActivityCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0B200022F00000200000002 /* XCLocalSwiftPackageReference "Packages/AgentActivityCore" */;
+			productName = AgentActivityCore;
+		};
 		111BE95C2ECD71E10079DD4E /* AsyncXPCConnection */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 111BE95B2ECD71E10079DD4E /* XCRemoteSwiftPackageReference "AsyncXPCConnection" */;

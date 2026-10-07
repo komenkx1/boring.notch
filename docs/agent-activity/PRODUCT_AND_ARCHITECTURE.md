@@ -13,8 +13,8 @@ The app is a local activity surface. It is not a replacement terminal, a univers
 | Run started and stopped | Yes | Yes | Yes | Snapshot only |
 | Tool activity | Yes | Yes | Yes | Snapshot only |
 | Approval or permission needed | Yes | Yes, interactive | Yes | No |
-| Final assistant response | Stop event | Streamed events | Stop event | No |
-| Live response streaming | No | Yes | Provider event dependent | No |
+| Final assistant response | Stop event | Streamed events | MessageDisplay or Stop | No |
+| Live response streaming | No | Yes | Yes, with MessageDisplay | No |
 | Usage windows | Separate account query | Yes | Provider event dependent | Yes when supplied |
 | Existing provider UI remains primary | Yes | Optional | Yes | Yes |
 
@@ -120,7 +120,9 @@ Text entry in the notch requires a deliberate key-capable window state. The exis
 
 - Add normalized Swift models and decoding tests.
 - Implement the authenticated local receiver and `AgentActivityStore`.
-- Add fixture-driven lifecycle tests, expiry, body limits, and redaction.
+- Add fixture-driven lifecycle, body-limit, malformed-input, and privacy-boundary tests.
+
+Stage 2 is implemented Claude-first. The runtime currently accepts documented Claude hook and status-line shapes only. Codex remains in the architecture but is intentionally deferred until the Claude path is verified end to end.
 
 ### Stage 3: provider observation
 
@@ -144,4 +146,4 @@ Text entry in the notch requires a deliberate key-capable window state. The exis
 
 ## Acceptance boundary for the first usable milestone
 
-The first usable milestone is complete when a real Codex hook and a real Claude hook can independently create, update, request attention for, and finish an agent run in the local store; a malformed or unauthenticated event is rejected; and the app remains functional when neither provider is installed.
+The first Claude milestone is complete when a real Claude hook can create, update, request attention for, and finish an agent run in the local store; a malformed or unauthenticated event is rejected; usage snapshots are accepted when Claude supplies them; and the app remains functional when Claude is not installed. Codex support is the next provider milestone.

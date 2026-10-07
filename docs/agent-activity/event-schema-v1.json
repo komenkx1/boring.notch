@@ -76,6 +76,10 @@
     "providerEventName": {
       "type": "string",
       "maxLength": 200
+    },
+    "providerEventIdentifier": {
+      "type": "string",
+      "maxLength": 200
     }
   },
   "$defs": {
@@ -113,8 +117,7 @@
         },
         "usedPercentage": {
           "type": "number",
-          "minimum": 0,
-          "maximum": 100
+          "minimum": 0
         },
         "windowDurationMinutes": {
           "type": "integer",

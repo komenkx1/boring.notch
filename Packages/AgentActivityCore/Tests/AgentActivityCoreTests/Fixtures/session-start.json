@@ -1,0 +1,6 @@
+{
+  "session_id": "claude-session-123",
+  "cwd": "/tmp/agent-project",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+}

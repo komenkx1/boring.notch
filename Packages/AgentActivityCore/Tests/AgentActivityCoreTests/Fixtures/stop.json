@@ -1,0 +1,7 @@
+{
+  "session_id": "claude-session-123",
+  "cwd": "/tmp/agent-project",
+  "hook_event_name": "Stop",
+  "turn_id": "turn-456",
+  "last_assistant_message": "Tests are passing."
+}

@@ -1,0 +1,10 @@
+{
+  "session_id": "claude-session-123",
+  "cwd": "/tmp/agent-project",
+  "hook_event_name": "MessageDisplay",
+  "turn_id": "turn-456",
+  "message_id": "message-789",
+  "index": 1,
+  "final": true,
+  "delta": "passing."
+}
