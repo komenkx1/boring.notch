@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0A100012F00000100000001 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C0A100032F00000100000003 /* LICENSE */; };
+		C0A100022F00000100000002 /* NOTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = C0A100042F00000100000004 /* NOTICE.md */; };
+		C0A100052F00000100000005 /* THIRD_PARTY_LICENSES in Resources */ = {isa = PBXBuildFile; fileRef = C0A100062F00000100000006 /* THIRD_PARTY_LICENSES */; };
 		1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		110029272E84FD4C00035A57 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
 		1100292A2E8691B400035A57 /* FileShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029292E8691B400035A57 /* FileShareView.swift */; };
@@ -181,6 +184,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C0A100032F00000100000003 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
+		C0A100042F00000100000004 /* NOTICE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTICE.md; sourceTree = SOURCE_ROOT; };
+		C0A100062F00000100000006 /* THIRD_PARTY_LICENSES */ = {isa = PBXFileReference; lastKnownFileType = text; path = THIRD_PARTY_LICENSES; sourceTree = SOURCE_ROOT; };
 		1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+LoadHelpers.swift"; sourceTree = "<group>"; };
 		110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryFileStorageService.swift; sourceTree = "<group>"; };
 		110029292E8691B400035A57 /* FileShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareView.swift; sourceTree = "<group>"; };
@@ -541,6 +547,9 @@
 		14CEF4092C5CAED200855D72 = {
 			isa = PBXGroup;
 			children = (
+				C0A100032F00000100000003 /* LICENSE */,
+				C0A100042F00000100000004 /* NOTICE.md */,
+				C0A100062F00000100000006 /* THIRD_PARTY_LICENSES */,
 				112B0EB62E30DD0F00562D6C /* mediaremote-adapter */,
 				14CEF4142C5CAED300855D72 /* boringNotch */,
 				11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */,
@@ -882,6 +891,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0A100012F00000100000001 /* LICENSE in Resources */,
+				C0A100022F00000100000002 /* NOTICE.md in Resources */,
+				C0A100052F00000100000005 /* THIRD_PARTY_LICENSES in Resources */,
 				14CEF41D2C5CAED400855D72 /* Preview Assets.xcassets in Resources */,
 				14CEF41A2C5CAED400855D72 /* Assets.xcassets in Resources */,
 				112B0EB82E30DD0F00562D6C /* MediaRemoteAdapterTestClient in Resources */,

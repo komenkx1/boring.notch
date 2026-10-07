@@ -6,6 +6,9 @@
   <br>
 </h1>
 
+> [!NOTE]
+> This branch is a modified GPLv3 development fork for local coding-agent activity in the macOS notch. The original project is [TheBoredTeam/boring.notch](https://github.com/TheBoredTeam/boring.notch). See the [product and architecture plan](docs/agent-activity/PRODUCT_AND_ARCHITECTURE.md), [modification record](MODIFICATIONS.md), and [GPL release checklist](docs/GPL-COMPLIANCE.md).
+
 
 <p align="center">
   <a title="Crowdin" target="_blank" href="https://crowdin.com/project/boring-notch"><img src="https://badges.crowdin.net/boring-notch/localized.svg"></a>
@@ -196,4 +199,3 @@ For a full list of licenses and attributions, please see the [Third-Party Licens
 
 - **SwiftUI**: For making us look like coding wizards.
 - **You**: For being awesome and checking out **boring.notch**!
-
