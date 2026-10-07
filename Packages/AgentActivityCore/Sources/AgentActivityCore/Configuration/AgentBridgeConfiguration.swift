@@ -14,4 +14,8 @@ public enum AgentBridgeConfiguration {
     public static var claudeStatusEndpoint: URL {
         URL(string: "http://\(loopbackHost):\(listeningPort)/v1/status/claude")!
     }
+
+    public static var activitySnapshotEndpoint: URL {
+        URL(string: "http://\(loopbackHost):\(listeningPort)/v1/agent-runs")!
+    }
 }

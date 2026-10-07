@@ -10,6 +10,7 @@ The app-owned receiver listens only on IPv4 loopback at `127.0.0.1:48763`. A fix
 | --- | --- |
 | `POST /v1/hooks/claude` | One documented Claude hook JSON body |
 | `POST /v1/status/claude` | One documented Claude status-line JSON snapshot |
+| `GET /v1/agent-runs` | Sanitized in-memory activity snapshot for local inspection |
 
 Both endpoints require:
 
@@ -26,6 +27,7 @@ Run these commands from the repository root:
 ```bash
 swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration preview
 swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration install
+swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration inspect
 swift run --package-path Packages/AgentActivityCore boring-notch-claude-integration uninstall
 ```
 
@@ -39,11 +41,13 @@ swift run --package-path Packages/AgentActivityCore boring-notch-claude-integrat
 
 `uninstall` removes only the Boring Notch hook handlers and token environment entry. It restores the previous status line unless the user replaced the Boring Notch status line after installation. The one-time backup remains available for manual recovery.
 
+`inspect` authenticates with the installed token and prints the receiver's current JSON snapshot. It exposes lifecycle state, provider, model, repository label, attention state, usage windows, and timestamps. It deliberately omits working directories, prompts, response text, and summaries. The command is a development and diagnostics surface; the notch UI remains a later stage.
+
 The hook transport intentionally uses a command forwarder instead of Claude's direct HTTP hook type. The locally installed Claude runtime skipped direct HTTP hooks for `SessionStart`; command hooks cover that event and still forward the unchanged JSON body to the authenticated loopback endpoint with a one-second timeout.
 
 ## Accepted Claude signals
 
-The hook decoder recognizes lifecycle, prompt processing, streamed `MessageDisplay` batches, tool use, permission requests, notifications, elicitation, subagent activity, task activity, stop, failure, and session-end events. Unknown event fields are ignored so additive provider changes do not break decoding. Unknown event names are rejected instead of guessed.
+The hook decoder recognizes lifecycle, prompt processing, streamed `MessageDisplay` batches, tool use, permission requests, notifications, elicitation, subagent activity, task activity, stop, failure, and session-end events. A documented `Notification` with `notification_type: permission_prompt` is classified as an approval request so Claude Desktop's delayed permission notification retains the correct attention priority. Unknown event fields are ignored so additive provider changes do not break decoding. Unknown event names are rejected instead of guessed.
 
 Status-line snapshots contribute only these fields:
 
@@ -67,7 +71,9 @@ Claude may omit account rate limits until after its first API response. The stor
 
 Automated tests cover documented fixture decoding, lifecycle aggregation, response assembly, authentication, malformed JSON, body limits, HTTP framing, settings preservation, idempotent installation, legacy-hook migration, and targeted removal.
 
-On the development Mac, the built app accepted authenticated hook and status snapshots with HTTP `204` and rejected an incorrect token with `401`. A real Claude CLI run executed the installed command hook successfully, and a one-turn first-party `claude-haiku-4-5` run completed successfully. Real account usage windows remain fixture-verified because the non-interactive run did not render a status line. Claude Desktop reads the same settings file, but its coding-session path still needs a separate live run before release.
+On the development Mac, the built app accepted authenticated hook and status snapshots with HTTP `204` and rejected an incorrect token with `401`. A first-party Claude CLI run using `claude-haiku-4-5` exercised lifecycle hooks and completed successfully. A separate interactive CLI run forwarded a live status-line snapshot containing the model, context percentage, five-hour window, and seven-day window; the inspector preserved those values when the run completed.
+
+Claude Desktop was also exercised against this repository. Its coding session created and completed a run through the installed hooks, and a real file-write permission card produced an attention event. Claude Desktop did not invoke the configured status-line command during that session, so the run had no model label or usage windows in the local store. This limitation is reported rather than filled from Desktop's private session files or scraped from its UI. The CLI status-line path remains the verified source of real Claude account usage in this stage.
 
 ## Provider references
 

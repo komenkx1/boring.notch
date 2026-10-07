@@ -10,6 +10,9 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 - Used command hook forwarders so `SessionStart` works on Claude versions that skip direct HTTP hooks for that event.
 - Added tests for settings preservation, idempotency, legacy-hook migration, status-line restoration, and user replacements.
 - Installed and exercised the Claude integration locally without adding agent UI or Codex support.
+- Added an authenticated, sanitized activity inspector for non-UI runtime verification.
+- Verified first-party Claude CLI lifecycle and real status-line usage windows, plus Claude Desktop lifecycle and permission attention events.
+- Classified Claude Desktop's documented `permission_prompt` notification as an approval request while keeping hook-based approvals observational.
 
 ## 2026-10-07
 

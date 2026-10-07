@@ -61,9 +61,17 @@ enum AgentBridgeHTTPParser {
         guard headers["transfer-encoding"] == nil else {
             return .rejected(statusCode: 400)
         }
-        guard let contentLengthText = headers["content-length"],
-              let contentLength = Int(contentLengthText),
-              contentLength >= 0 else {
+        let requestMethod = String(requestLineParts[0]).uppercased()
+        let contentLength: Int
+        if let contentLengthText = headers["content-length"] {
+            guard let parsedContentLength = Int(contentLengthText),
+                  parsedContentLength >= 0 else {
+                return .rejected(statusCode: 411)
+            }
+            contentLength = parsedContentLength
+        } else if requestMethod == "GET" {
+            contentLength = 0
+        } else {
             return .rejected(statusCode: 411)
         }
         guard contentLength <= maximumBodyLength else {

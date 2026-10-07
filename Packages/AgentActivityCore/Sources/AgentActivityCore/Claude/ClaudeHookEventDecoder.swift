@@ -257,6 +257,9 @@ public struct ClaudeHookEventDecoder: Sendable {
         occurredAt: Date,
         repositoryLabel: String?
     ) -> AgentActivityEvent {
+        let requestKind: AgentAttentionRequestKind = hookInput.notificationType == "permission_prompt"
+            ? .approval
+            : .notification
         let notificationText = clipped(
             hookInput.message
                 ?? hookInput.title
@@ -264,7 +267,7 @@ public struct ClaudeHookEventDecoder: Sendable {
         )
         let attentionRequest = AgentAttentionRequest(
             requestIdentifier: requestIdentifier(prefix: "notification", hookInput: hookInput),
-            requestKind: .notification,
+            requestKind: requestKind,
             promptText: notificationText,
             canRespond: false
         )

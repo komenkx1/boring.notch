@@ -62,6 +62,8 @@ enum ClaudeIntegrationCommand {
         case "forward-hook":
             let hookBody = try readStandardInput(maximumLength: 65_536)
             await sendAgentPayload(hookBody, to: AgentBridgeConfiguration.claudeHookEndpoint)
+        case "inspect":
+            try await printActivitySnapshot(using: settingsManager)
         case "help", "--help", "-h":
             printUsage()
         default:
@@ -99,6 +101,33 @@ enum ClaudeIntegrationCommand {
             input: statusBody
         )
         FileHandle.standardOutput.write(previousStatusOutput)
+    }
+
+    private static func printActivitySnapshot(
+        using settingsManager: ClaudeIntegrationSettingsManager
+    ) async throws {
+        guard let bearerToken = try settingsManager.installedBearerToken() else {
+            throw ClaudeIntegrationCommandError.integrationNotInstalled
+        }
+
+        var snapshotRequest = URLRequest(url: AgentBridgeConfiguration.activitySnapshotEndpoint)
+        snapshotRequest.httpMethod = "GET"
+        snapshotRequest.timeoutInterval = 2
+        snapshotRequest.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+        let (snapshotBody, response) = try await URLSession.shared.data(for: snapshotRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClaudeIntegrationCommandError.unexpectedResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            throw ClaudeIntegrationCommandError.bridgeStatus(httpResponse.statusCode)
+        }
+
+        let snapshotObject = try JSONSerialization.jsonObject(with: snapshotBody)
+        let readableSnapshot = try JSONSerialization.data(
+            withJSONObject: snapshotObject,
+            options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        )
+        print(String(decoding: readableSnapshot, as: UTF8.self))
     }
 
     private static func sendAgentPayload(_ requestBody: Data, to endpoint: URL) async {
@@ -153,6 +182,7 @@ enum ClaudeIntegrationCommand {
 
               preview         Show the exact Claude settings merge with the token redacted.
               install         Back up settings, merge Boring Notch hooks, and install forwarding.
+              inspect         Print the sanitized in-memory agent activity snapshot.
               uninstall       Remove only Boring Notch entries and restore the prior status line.
               forward-hook    Internal hook forwarding command.
               forward-status  Internal status-line forwarding command.
@@ -164,4 +194,7 @@ enum ClaudeIntegrationCommand {
 private enum ClaudeIntegrationCommandError: Error, Equatable {
     case unknownCommand(String)
     case standardInputTooLarge
+    case integrationNotInstalled
+    case unexpectedResponse
+    case bridgeStatus(Int)
 }

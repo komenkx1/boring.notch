@@ -130,7 +130,7 @@ Stage 2 is implemented Claude-first. The runtime currently accepts documented Cl
 - Verify Claude CLI and Desktop paths separately. Report unsupported fields honestly.
 - Add opt-in Codex hooks installation and removal after the Claude path is complete.
 
-The Claude-first portion is implemented without UI. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. CLI hook dispatch, receiver authentication, and a complete first-party Claude model response have been exercised locally. A real usage snapshot and Desktop coding session remain release-verification items. Codex is still intentionally deferred.
+The Claude-first portion is implemented without UI. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. First-party Claude CLI lifecycle, real status-line usage windows, Claude Desktop lifecycle, and a Desktop permission prompt have been exercised locally. A sanitized authenticated inspector exposes the resulting in-memory state without prompts, responses, or filesystem paths. Claude Desktop did not execute the status-line command during validation, so direct Desktop model and usage fields remain unsupported rather than inferred from private files or screen scraping. Codex is still intentionally deferred.
 
 ### Stage 4: notch experience
 

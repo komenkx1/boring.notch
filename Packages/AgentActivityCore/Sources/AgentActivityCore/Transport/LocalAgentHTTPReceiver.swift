@@ -164,6 +164,7 @@ public final class LocalAgentHTTPReceiver: @unchecked Sendable {
         let reasonPhrase = HTTPReasonPhrase.text(for: response.statusCode)
         let responseHead = "HTTP/1.1 \(response.statusCode) \(reasonPhrase)\r\n"
             + "Content-Length: \(response.body.count)\r\n"
+            + (response.contentType.map { "Content-Type: \($0)\r\n" } ?? "")
             + "Connection: close\r\n"
             + "\r\n"
         var responseBytes = Data(responseHead.utf8)
@@ -205,6 +206,7 @@ private final class ReceiverStartupContinuation: @unchecked Sendable {
 private enum HTTPReasonPhrase {
     static func text(for statusCode: Int) -> String {
         switch statusCode {
+        case 200: "OK"
         case 204: "No Content"
         case 400: "Bad Request"
         case 401: "Unauthorized"
@@ -214,6 +216,7 @@ private enum HTTPReasonPhrase {
         case 413: "Content Too Large"
         case 415: "Unsupported Media Type"
         case 431: "Request Header Fields Too Large"
+        case 500: "Internal Server Error"
         default: "Error"
         }
     }

@@ -22,10 +22,16 @@ public struct AgentBridgeRequest: Equatable, Sendable {
 public struct AgentBridgeResponse: Equatable, Sendable {
     public let statusCode: Int
     public let body: Data
+    public let contentType: String?
 
-    public init(statusCode: Int, body: Data = Data()) {
+    public init(
+        statusCode: Int,
+        body: Data = Data(),
+        contentType: String? = nil
+    ) {
         self.statusCode = statusCode
         self.body = body
+        self.contentType = contentType
     }
 }
 
@@ -55,14 +61,17 @@ public struct AgentBridgeRequestProcessor: Sendable {
         _ request: AgentBridgeRequest,
         receivedAt: Date = Date()
     ) async -> AgentBridgeResponse {
-        guard request.method.uppercased() == "POST" else {
-            return AgentBridgeResponse(statusCode: 405)
-        }
         guard request.body.count <= maximumRequestBodyLength else {
             return AgentBridgeResponse(statusCode: 413)
         }
         guard bearerToken(from: request.headers).map(tokenAuthenticator.accepts) == true else {
             return AgentBridgeResponse(statusCode: 401)
+        }
+        if request.method.uppercased() == "GET" {
+            return await snapshotResponse(for: request, generatedAt: receivedAt)
+        }
+        guard request.method.uppercased() == "POST" else {
+            return AgentBridgeResponse(statusCode: 405)
         }
         guard contentType(from: request.headers) == "application/json" else {
             return AgentBridgeResponse(statusCode: 415)
@@ -90,6 +99,32 @@ public struct AgentBridgeRequestProcessor: Sendable {
             return AgentBridgeResponse(statusCode: 204)
         } catch {
             return AgentBridgeResponse(statusCode: 400)
+        }
+    }
+
+    private func snapshotResponse(
+        for request: AgentBridgeRequest,
+        generatedAt: Date
+    ) async -> AgentBridgeResponse {
+        guard request.path == "/v1/agent-runs" else {
+            return AgentBridgeResponse(statusCode: 404)
+        }
+
+        let agentRuns = await activityStore.agentRuns()
+        let snapshot = AgentActivitySnapshot(
+            generatedAt: generatedAt,
+            agentRuns: agentRuns.map(AgentRunSnapshot.init)
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        do {
+            return AgentBridgeResponse(
+                statusCode: 200,
+                body: try encoder.encode(snapshot),
+                contentType: "application/json"
+            )
+        } catch {
+            return AgentBridgeResponse(statusCode: 500)
         }
     }
 

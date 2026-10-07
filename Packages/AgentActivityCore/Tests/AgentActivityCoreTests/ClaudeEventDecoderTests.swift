@@ -36,6 +36,17 @@ final class ClaudeEventDecoderTests: XCTestCase {
         )
     }
 
+    func testPermissionNotificationCreatesApprovalAttentionEvent() throws {
+        let hookBody = try FixtureLoader.body(named: "notification-permission")
+
+        let event = try ClaudeHookEventDecoder().decodeEvent(from: hookBody)
+
+        XCTAssertEqual(event.eventKind, .attentionRequested)
+        XCTAssertEqual(event.summaryText, "Claude needs your permission")
+        XCTAssertEqual(event.attentionRequest?.requestKind, .approval)
+        XCTAssertEqual(event.attentionRequest?.canRespond, false)
+    }
+
     func testMessageDisplayPreservesMessageIdentifierForStreamingAssembly() throws {
         let hookBody = try FixtureLoader.body(named: "message-display-first")
 

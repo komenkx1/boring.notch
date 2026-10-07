@@ -87,6 +87,54 @@ final class AgentBridgeRequestProcessorTests: XCTestCase {
         XCTAssertEqual(malformedResponse.statusCode, 400)
     }
 
+    func testAuthenticatedSnapshotReturnsSanitizedAgentRuns() async throws {
+        let activityStore = AgentActivityStore()
+        let requestProcessor = makeRequestProcessor(activityStore: activityStore)
+        let hookBody = try FixtureLoader.body(named: "session-start")
+        _ = await requestProcessor.process(
+            authenticatedRequest(path: "/v1/hooks/claude", body: hookBody)
+        )
+
+        let snapshotResponse = await requestProcessor.process(
+            AgentBridgeRequest(
+                method: "GET",
+                path: "/v1/agent-runs",
+                headers: ["Authorization": "Bearer \(bearerToken)"],
+                body: Data()
+            ),
+            receivedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        XCTAssertEqual(snapshotResponse.statusCode, 200)
+        XCTAssertEqual(snapshotResponse.contentType, "application/json")
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let snapshot = try decoder.decode(
+            AgentActivitySnapshot.self,
+            from: snapshotResponse.body
+        )
+        XCTAssertEqual(snapshot.generatedAt, Date(timeIntervalSince1970: 100))
+        XCTAssertEqual(snapshot.agentRuns.count, 1)
+        XCTAssertEqual(snapshot.agentRuns.first?.activityState, .running)
+        XCTAssertEqual(snapshot.agentRuns.first?.repositoryLabel, "agent-project")
+        XCTAssertFalse(snapshotResponse.body.contains(Data("/Users/example".utf8)))
+        XCTAssertFalse(snapshotResponse.body.contains(Data("summaryText".utf8)))
+    }
+
+    func testSnapshotRejectsIncorrectBearerToken() async {
+        let requestProcessor = makeRequestProcessor(activityStore: AgentActivityStore())
+        let snapshotResponse = await requestProcessor.process(
+            AgentBridgeRequest(
+                method: "GET",
+                path: "/v1/agent-runs",
+                headers: ["Authorization": "Bearer incorrect-token"],
+                body: Data()
+            )
+        )
+
+        XCTAssertEqual(snapshotResponse.statusCode, 401)
+    }
+
     func testHTTPParserWaitsForCompleteBodyAndRejectsLargeHeaders() {
         let requestHead = "POST /v1/hooks/claude HTTP/1.1\r\n"
             + "Authorization: Bearer fixture-token\r\n"
@@ -116,6 +164,23 @@ final class AgentBridgeRequestProcessorTests: XCTestCase {
         XCTAssertEqual(parsedRequest.path, "/v1/hooks/claude")
         XCTAssertEqual(parsedRequest.body, Data("{}".utf8))
         XCTAssertEqual(oversizedHeaderParse, .rejected(statusCode: 431))
+    }
+
+    func testHTTPParserAcceptsGetWithoutContentLength() {
+        let requestHead = "GET /v1/agent-runs HTTP/1.1\r\n"
+            + "Authorization: Bearer fixture-token\r\n\r\n"
+
+        let parseResult = AgentBridgeHTTPParser.parse(
+            Data(requestHead.utf8),
+            maximumHeaderLength: 1_024,
+            maximumBodyLength: 1_024
+        )
+
+        guard case .request(let parsedRequest) = parseResult else {
+            return XCTFail("Expected a complete GET request")
+        }
+        XCTAssertEqual(parsedRequest.method, "GET")
+        XCTAssertTrue(parsedRequest.body.isEmpty)
     }
 
     func testLoopbackReceiverAcceptsAuthenticatedClaudeHook() async throws {
