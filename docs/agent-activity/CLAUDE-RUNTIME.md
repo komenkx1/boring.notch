@@ -67,7 +67,7 @@ Claude may omit account rate limits until after its first API response. The stor
 
 Automated tests cover documented fixture decoding, lifecycle aggregation, response assembly, authentication, malformed JSON, body limits, HTTP framing, settings preservation, idempotent installation, legacy-hook migration, and targeted removal.
 
-On the development Mac, the built app accepted authenticated hook and status snapshots with HTTP `204` and rejected an incorrect token with `401`. A real Claude CLI run executed the installed command hook successfully. That run could not complete a model response because the user's configured provider/model was unavailable, so response completion and real account usage remain fixture-verified rather than live-verified. Claude Desktop reads the same settings file, but its coding-session path still needs a separate live run before release.
+On the development Mac, the built app accepted authenticated hook and status snapshots with HTTP `204` and rejected an incorrect token with `401`. A real Claude CLI run executed the installed command hook successfully, and a one-turn first-party `claude-haiku-4-5` run completed successfully. Real account usage windows remain fixture-verified because the non-interactive run did not render a status line. Claude Desktop reads the same settings file, but its coding-session path still needs a separate live run before release.
 
 ## Provider references
 
