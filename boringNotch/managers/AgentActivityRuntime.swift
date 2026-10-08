@@ -1,14 +1,24 @@
 import AgentActivityCore
+import Combine
 import Foundation
 
+enum AgentBridgeAvailability: Equatable {
+    case starting
+    case listening
+    case unavailable
+}
+
 @MainActor
-final class AgentActivityRuntime {
+final class AgentActivityRuntime: ObservableObject {
     static let shared = AgentActivityRuntime()
 
     let activityStore = AgentActivityStore()
+    @Published private(set) var agentRuns: [AgentRun] = []
+    @Published private(set) var bridgeAvailability: AgentBridgeAvailability = .starting
 
     private var localReceiver: LocalAgentHTTPReceiver?
     private var startupTask: Task<Void, Never>?
+    private var activityRefreshTask: Task<Void, Never>?
 
     private init() {}
 
@@ -17,6 +27,7 @@ final class AgentActivityRuntime {
             return
         }
 
+        bridgeAvailability = .starting
         startupTask = Task { @MainActor in
             do {
                 let bearerToken = try AgentBridgeTokenStore().loadOrCreateToken()
@@ -32,6 +43,8 @@ final class AgentActivityRuntime {
                 let listeningPort = try await receiver.start(
                     port: AgentBridgeConfiguration.listeningPort
                 )
+                bridgeAvailability = .listening
+                startRefreshingAgentRuns()
                 NSLog("Claude agent bridge listening on 127.0.0.1:%d", listeningPort)
             } catch is CancellationError {
                 localReceiver?.stop()
@@ -39,16 +52,45 @@ final class AgentActivityRuntime {
             } catch {
                 localReceiver?.stop()
                 localReceiver = nil
+                bridgeAvailability = .unavailable
                 NSLog("Claude agent bridge could not start: %@", String(describing: error))
             }
             startupTask = nil
         }
     }
 
+    func retry() {
+        stop()
+        start()
+    }
+
     func stop() {
         startupTask?.cancel()
         startupTask = nil
+        activityRefreshTask?.cancel()
+        activityRefreshTask = nil
         localReceiver?.stop()
         localReceiver = nil
+        bridgeAvailability = .unavailable
+    }
+
+    private func startRefreshingAgentRuns() {
+        activityRefreshTask?.cancel()
+        activityRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            while !Task.isCancelled {
+                let latestAgentRuns = await activityStore.agentRuns()
+                if agentRuns != latestAgentRuns {
+                    agentRuns = latestAgentRuns
+                }
+
+                do {
+                    try await Task.sleep(for: .milliseconds(500))
+                } catch {
+                    return
+                }
+            }
+        }
     }
 }

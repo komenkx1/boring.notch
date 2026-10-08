@@ -130,7 +130,7 @@ Stage 2 is implemented Claude-first. The runtime currently accepts documented Cl
 - Verify Claude CLI and Desktop paths separately. Report unsupported fields honestly.
 - Add opt-in Codex hooks installation and removal after the Claude path is complete.
 
-The Claude-first portion is implemented without UI. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. First-party Claude CLI lifecycle, real status-line usage windows, Claude Desktop lifecycle, and a Desktop permission prompt have been exercised locally. A sanitized authenticated inspector exposes the resulting in-memory state without prompts, responses, or filesystem paths. Claude Desktop did not execute the status-line command during validation, so direct Desktop model and usage fields remain unsupported rather than inferred from private files or screen scraping. Codex is still intentionally deferred.
+The Claude-first provider observation is implemented. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. First-party Claude CLI lifecycle, real status-line usage windows, Claude Desktop lifecycle, and a Desktop permission prompt have been exercised locally. A sanitized authenticated inspector exposes the resulting in-memory state without prompts, responses, or filesystem paths. Claude Desktop did not execute the status-line command during validation, so direct Desktop model and usage fields remain unsupported rather than inferred from private files or screen scraping. The Stage 4 notch view now consumes this state, while Codex is still intentionally deferred.
 
 ### Stage 4: notch experience
 
@@ -138,6 +138,8 @@ The Claude-first portion is implemented without UI. The app starts an authentica
 - Add compact attention state and expanded active-run list.
 - Add empty, loading, disconnected, malformed-event, and provider-unavailable states.
 - Validate keyboard input, VoiceOver labels, window focus, multiple displays, and no-notch Macs.
+
+The first Stage 4 slice is implemented. A terminal icon in the open-notch header shows real active or attention counts and opens a provider-neutral run list backed by `AgentActivityStore`. The detail view shows Claude state, provider-supplied summaries, and documented usage windows, with explicit loading, empty, and bridge-unavailable states. Observational Claude events remain read-only: the view directs the user back to Claude instead of rendering a non-functional approval control. Multiple-display and no-notch Mac validation remain release checks.
 
 ### Stage 5: rich clients and release
 

@@ -1,6 +1,6 @@
 # Claude runtime contract
 
-Stage 3 connects the Stage 2 receiver to Claude Code. Installation is explicit, previewable, idempotent, and reversible. It does not add agent UI to the notch yet.
+Stage 3 connects the Stage 2 receiver to Claude Code. Installation is explicit, previewable, idempotent, and reversible. The Stage 4 notch view reads the normalized in-memory state produced by this runtime.
 
 ## Local endpoints
 
@@ -41,7 +41,7 @@ swift run --package-path Packages/AgentActivityCore boring-notch-claude-integrat
 
 `uninstall` removes only the Boring Notch hook handlers and token environment entry. It restores the previous status line unless the user replaced the Boring Notch status line after installation. The one-time backup remains available for manual recovery.
 
-`inspect` authenticates with the installed token and prints the receiver's current JSON snapshot. It exposes lifecycle state, provider, model, repository label, attention state, usage windows, and timestamps. It deliberately omits working directories, prompts, response text, and summaries. The command is a development and diagnostics surface; the notch UI remains a later stage.
+`inspect` authenticates with the installed token and prints the receiver's current JSON snapshot. It exposes lifecycle state, provider, model, repository label, attention state, usage windows, and timestamps. It deliberately omits working directories, prompts, response text, and summaries. The command remains a development and diagnostics surface; the notch view reads the same normalized store directly in memory.
 
 The hook transport intentionally uses a command forwarder instead of Claude's direct HTTP hook type. The locally installed Claude runtime skipped direct HTTP hooks for `SessionStart`; command hooks cover that event and still forward the unchanged JSON body to the authenticated loopback endpoint with a one-second timeout.
 

@@ -4,6 +4,8 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 
 ## 2026-10-08
 
+- Added a native Agent Activity entry point to the open-notch header and a provider-neutral monitoring view for real Claude sessions, attention states, responses, and usage windows.
+- Added explicit loading, empty, and bridge-unavailable states plus keyboard and VoiceOver labels for the new controls.
 - Started the authenticated Claude receiver with the macOS application lifecycle on fixed loopback port `48763`.
 - Added a Claude integration CLI with exact redacted preview, idempotent install, targeted uninstall, and a one-time settings backup.
 - Preserved existing Claude hooks and status-line output while adding local event and usage forwarding.
