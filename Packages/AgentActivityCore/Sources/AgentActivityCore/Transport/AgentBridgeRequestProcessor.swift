@@ -42,19 +42,22 @@ public struct AgentBridgeRequestProcessor: Sendable {
     private let activityStore: AgentActivityStore
     private let claudeHookDecoder: ClaudeHookEventDecoder
     private let claudeStatusDecoder: ClaudeStatusSnapshotDecoder
+    private let permissionStore: ClaudePermissionStore?
 
     public init(
         tokenAuthenticator: any AgentBridgeTokenAuthenticating,
         activityStore: AgentActivityStore,
         maximumRequestBodyLength: Int = 65_536,
         claudeHookDecoder: ClaudeHookEventDecoder = ClaudeHookEventDecoder(),
-        claudeStatusDecoder: ClaudeStatusSnapshotDecoder = ClaudeStatusSnapshotDecoder()
+        claudeStatusDecoder: ClaudeStatusSnapshotDecoder = ClaudeStatusSnapshotDecoder(),
+        permissionStore: ClaudePermissionStore? = nil
     ) {
         self.tokenAuthenticator = tokenAuthenticator
         self.activityStore = activityStore
         self.maximumRequestBodyLength = maximumRequestBodyLength
         self.claudeHookDecoder = claudeHookDecoder
         self.claudeStatusDecoder = claudeStatusDecoder
+        self.permissionStore = permissionStore
     }
 
     public func process(
@@ -68,6 +71,13 @@ public struct AgentBridgeRequestProcessor: Sendable {
             return AgentBridgeResponse(statusCode: 401)
         }
         if request.method.uppercased() == "GET" {
+            if let permissionStore, request.path.hasPrefix("/v1/claude/approvals/"),
+               let identifier = UUID(uuidString: String(request.path.dropFirst("/v1/claude/approvals/".count))) {
+                guard let permissionPoll = await permissionStore.poll(requestIdentifier: identifier, at: receivedAt) else {
+                    return AgentBridgeResponse(statusCode: 404)
+                }
+                return jsonResponse(permissionPoll)
+            }
             return await snapshotResponse(for: request, generatedAt: receivedAt)
         }
         guard request.method.uppercased() == "POST" else {
@@ -78,6 +88,9 @@ public struct AgentBridgeRequestProcessor: Sendable {
         }
 
         do {
+            if request.path == "/v1/claude/approvals", let permissionStore {
+                return jsonResponse(try await permissionStore.register(hookBody: request.body, at: receivedAt))
+            }
             let normalizedEvent: AgentActivityEvent
 
             switch request.path {
@@ -100,11 +113,20 @@ public struct AgentBridgeRequestProcessor: Sendable {
                 return AgentBridgeResponse(statusCode: 404)
             }
 
-            await activityStore.apply(normalizedEvent)
+            if await permissionStore?.observe(normalizedEvent) != false {
+                await activityStore.apply(normalizedEvent)
+            }
             return AgentBridgeResponse(statusCode: 204)
         } catch {
             return AgentBridgeResponse(statusCode: 400)
         }
+    }
+
+    private func jsonResponse(_ permissionPoll: ClaudePermissionPoll) -> AgentBridgeResponse {
+        guard let responseBody = try? JSONEncoder().encode(permissionPoll) else {
+            return AgentBridgeResponse(statusCode: 500)
+        }
+        return AgentBridgeResponse(statusCode: 200, body: responseBody, contentType: "application/json")
     }
 
     private func snapshotResponse(

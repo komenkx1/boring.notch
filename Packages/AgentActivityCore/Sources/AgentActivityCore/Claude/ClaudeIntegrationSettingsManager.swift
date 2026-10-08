@@ -98,7 +98,10 @@ public struct ClaudeIntegrationSettingsManager {
         jsonEncoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
     }
 
-    public func preview(statusForwardingCommand: String) throws -> ClaudeIntegrationChangeSummary {
+    public func preview(
+        statusForwardingCommand: String,
+        interactiveApprovals: Bool = false
+    ) throws -> ClaudeIntegrationChangeSummary {
         let fileManager = FileManager.default
         let currentSettings = try readSettings()
         let existingIntegrationState = try readIntegrationState()
@@ -111,7 +114,8 @@ public struct ClaudeIntegrationSettingsManager {
         let updatedSettings = try addingIntegration(
             to: currentSettings,
             bearerToken: "<redacted>",
-            statusForwardingCommand: statusForwardingCommand
+            statusForwardingCommand: statusForwardingCommand,
+            interactiveApprovals: interactiveApprovals
         )
         let preservedHookGroupCount = try hookGroupCount(in: currentSettings)
 
@@ -129,7 +133,8 @@ public struct ClaudeIntegrationSettingsManager {
 
     public func install(
         bearerToken: String,
-        statusForwardingCommand: String
+        statusForwardingCommand: String,
+        interactiveApprovals: Bool = false
     ) throws -> ClaudeIntegrationInstallationReport {
         let fileManager = FileManager.default
         let currentSettings = try readSettings()
@@ -144,7 +149,8 @@ public struct ClaudeIntegrationSettingsManager {
         let updatedSettings = try addingIntegration(
             to: currentSettings,
             bearerToken: bearerToken,
-            statusForwardingCommand: statusForwardingCommand
+            statusForwardingCommand: statusForwardingCommand,
+            interactiveApprovals: interactiveApprovals
         )
 
         try fileManager.createDirectory(
@@ -279,7 +285,8 @@ public struct ClaudeIntegrationSettingsManager {
     private func addingIntegration(
         to settings: JSONValue,
         bearerToken: String,
-        statusForwardingCommand: String
+        statusForwardingCommand: String,
+        interactiveApprovals: Bool
     ) throws -> JSONValue {
         var settingsObject = try requiredObject(from: settings)
         var environmentVariables = try optionalObject(
@@ -303,7 +310,7 @@ public struct ClaudeIntegrationSettingsManager {
                 from: hooks[eventName],
                 error: .invalidHooksSection
             )
-            hookGroups.append(ownedHookGroup())
+            hookGroups.append(ownedHookGroup(interactive: interactiveApprovals && eventName == "PermissionRequest"))
             hooks[eventName] = .array(hookGroups)
         }
         settingsObject["hooks"] = .object(hooks)
@@ -318,14 +325,14 @@ public struct ClaudeIntegrationSettingsManager {
         return .object(settingsObject)
     }
 
-    private func ownedHookGroup() -> JSONValue {
+    private func ownedHookGroup(interactive: Bool) -> JSONValue {
         .object([
             "hooks": .array([
                 .object([
                     "type": .string("command"),
                     "command": .string(locations.forwardingExecutable.path),
-                    "args": .array([.string("forward-hook")]),
-                    "timeout": .number(1)
+                    "args": .array([.string(interactive ? "request-permission" : "forward-hook")]),
+                    "timeout": .number(interactive ? 55 : 1)
                 ])
             ])
         ])
@@ -403,7 +410,8 @@ public struct ClaudeIntegrationSettingsManager {
         }
         let isCurrentCommandHook = hookObject["type"] == .string("command")
             && hookObject["command"] == .string(locations.forwardingExecutable.path)
-            && hookObject["args"] == .array([.string("forward-hook")])
+            && (hookObject["args"] == .array([.string("forward-hook")])
+                || hookObject["args"] == .array([.string("request-permission")]))
         let isLegacyHTTPHook = hookObject["type"] == .string("http")
             && hookObject["url"] == .string(
                 AgentBridgeConfiguration.claudeHookEndpoint.absoluteString

@@ -4,6 +4,10 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 
 ## 2026-10-08
 
+- Added an experimental, opt-in Claude PermissionRequest return channel with native Allow once and Deny controls, full bounded tool-input review, keyboard focus scrolling, and single-use in-memory tickets.
+- Added approval expiry, polling freshness, session replacement and lifecycle cancellation checks, authenticated registration/polling, and no HTTP decision endpoint or permanent permission writes.
+- Added reversible interactive-hook installation and focused approval/client/installer tests. Local hook round-trip and UI fixtures were exercised; live Claude approval and Desktop return-channel validation remain pending authentication.
+
 - Added explicit previous/next quota-window navigation, visible scroll indicators, keyboard activation, and Escape dismissal. Enabled key-window focus only for Agent Activity outside lock-screen SkyLight mode.
 - Added five-minute observation freshness, an explicit Unknown state, and fresh-event recovery without inferring process death or completion.
 - Added multi-provider concurrent receiver and restart tests, and verified live Claude/Codex completion plus a force-stopped Codex session expiring to Unknown.

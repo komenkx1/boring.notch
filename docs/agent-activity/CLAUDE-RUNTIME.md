@@ -79,3 +79,7 @@ Claude Desktop was also exercised against this repository. Its coding session cr
 
 - [Claude Code hooks](https://code.claude.com/docs/en/hooks)
 - [Claude Code status line](https://code.claude.com/docs/en/statusline)
+
+## Experimental permission return channel
+
+An opt-in, single-use approval slice is implemented and locally fixture-tested. Live Claude approval verification is still pending authentication. See [CLAUDE-APPROVALS.md](CLAUDE-APPROVALS.md) for setup, fallback rules and the exact validation boundary. The default integration remains observational.

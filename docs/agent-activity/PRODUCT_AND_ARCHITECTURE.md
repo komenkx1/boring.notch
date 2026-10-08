@@ -82,6 +82,8 @@ App server supports streamed thread events, approval conversations, and account 
 
 Claude hooks provide lifecycle, permission, tool, subagent, notification, and stop events across supported local Claude surfaces. The adapter should use only documented fields and must tolerate version additions.
 
+An experimental PermissionRequest return channel now adds opt-in, single-use native approvals for a bounded set of tools. Its command/loopback/UI round-trip is fixture-tested; live provider and Desktop approval validation remain pending authentication. Default hooks stay observational. See `CLAUDE-APPROVALS.md` for the protocol, timeout and verification boundaries.
+
 ### Claude status line
 
 The status-line input can provide workspace, model, context, and account usage-window snapshots when Claude supplies them. The integration should tee only the required fields into the local bridge and preserve the user's existing status-line behavior.

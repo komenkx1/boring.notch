@@ -22,7 +22,8 @@ enum ClaudeIntegrationCommand {
         switch command {
         case "preview":
             let changeSummary = try settingsManager.preview(
-                statusForwardingCommand: statusForwardingCommand
+                statusForwardingCommand: statusForwardingCommand,
+                interactiveApprovals: arguments.contains("--interactive-approvals")
             )
             print("Hooks to add: \(changeSummary.hookEventsAdded.joined(separator: ", "))")
             print("Existing hook groups preserved: \(changeSummary.preservedHookGroupCount)")
@@ -36,7 +37,8 @@ enum ClaudeIntegrationCommand {
                 ?? AgentBridgeTokenStore().loadOrCreateToken()
             let installationReport = try settingsManager.install(
                 bearerToken: bearerToken,
-                statusForwardingCommand: statusForwardingCommand
+                statusForwardingCommand: statusForwardingCommand,
+                interactiveApprovals: arguments.contains("--interactive-approvals")
             )
             print("Claude integration installed.")
             print("Settings: \(installationReport.settingsFile.path)")
@@ -62,6 +64,14 @@ enum ClaudeIntegrationCommand {
         case "forward-hook":
             let hookBody = try readStandardInput(maximumLength: 65_536)
             await sendAgentPayload(hookBody, to: AgentBridgeConfiguration.claudeHookEndpoint)
+        case "request-permission":
+            guard let hookBody = try? readStandardInput(maximumLength: 65_536),
+                  let bearerToken = ProcessInfo.processInfo.environment[AgentBridgeConfiguration.claudeTokenEnvironmentName] else { return }
+            await sendAgentPayload(hookBody, to: AgentBridgeConfiguration.claudeHookEndpoint)
+            if let decision = await ClaudePermissionClient().requestDecision(hookBody: hookBody, bearerToken: bearerToken),
+               let hookOutput = try? decision.hookOutput() {
+                FileHandle.standardOutput.write(hookOutput)
+            }
         case "inspect":
             try await printActivitySnapshot(using: settingsManager)
         case "help", "--help", "-h":
@@ -164,9 +174,12 @@ enum ClaudeIntegrationCommand {
     }
 
     private static func readStandardInput(maximumLength: Int) throws -> Data {
-        let inputBytes = try FileHandle.standardInput.readToEnd() ?? Data()
-        guard inputBytes.count <= maximumLength else {
-            throw ClaudeIntegrationCommandError.standardInputTooLarge
+        var inputBytes = Data()
+        while let nextBytes = try FileHandle.standardInput.read(upToCount: min(4_096, maximumLength + 1 - inputBytes.count)), !nextBytes.isEmpty {
+            inputBytes.append(nextBytes)
+            guard inputBytes.count <= maximumLength else {
+                throw ClaudeIntegrationCommandError.standardInputTooLarge
+            }
         }
         return inputBytes
     }
@@ -186,6 +199,8 @@ enum ClaudeIntegrationCommand {
               uninstall       Remove only Boring Notch entries and restore the prior status line.
               forward-hook    Internal hook forwarding command.
               forward-status  Internal status-line forwarding command.
+
+            Add --interactive-approvals to preview or install to enable single-use Claude tool approvals.
             """
         )
     }

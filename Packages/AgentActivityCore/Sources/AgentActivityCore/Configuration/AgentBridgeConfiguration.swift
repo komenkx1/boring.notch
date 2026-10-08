@@ -11,6 +11,10 @@ public enum AgentBridgeConfiguration {
         URL(string: "http://\(loopbackHost):\(listeningPort)/v1/hooks/claude")!
     }
 
+    public static var claudePermissionEndpoint: URL {
+        URL(string: "http://\(loopbackHost):\(listeningPort)/v1/claude/approvals")!
+    }
+
     public static var codexHookEndpoint: URL {
         URL(string: "http://\(loopbackHost):\(listeningPort)/v1/hooks/codex")!
     }

@@ -1,4 +1,5 @@
 import AgentActivityCore
+import AppKit
 import Combine
 import Foundation
 
@@ -21,6 +22,7 @@ final class AgentActivityRuntime: ObservableObject {
 
     let activityStore = AgentActivityStore()
     @Published private(set) var agentRuns: [AgentRun] = []
+    @Published private(set) var claudePermissionRequests: [ClaudePermissionRequest] = []
     @Published private(set) var bridgeAvailability: AgentBridgeAvailability = .starting
     @Published private(set) var codexAccountUsage: CodexAccountUsage?
     @Published private(set) var codexUsageAvailability: CodexUsageAvailability = .notInstalled
@@ -29,6 +31,7 @@ final class AgentActivityRuntime: ObservableObject {
     private var startupTask: Task<Void, Never>?
     private var activityRefreshTask: Task<Void, Never>?
     private var usageRefreshTask: Task<Void, Never>?
+    private var permissionStore: ClaudePermissionStore?
 
     private init() {}
 
@@ -46,11 +49,14 @@ final class AgentActivityRuntime: ObservableObject {
                     ?? AgentBridgeTokenStore().loadOrCreateToken()
                 try Task.checkCancellation()
                 await activityStore.removeAll()
+                let permissionStore = ClaudePermissionStore(activityStore: activityStore)
+                self.permissionStore = permissionStore
                 let requestProcessor = AgentBridgeRequestProcessor(
                     tokenAuthenticator: FixedAgentBridgeTokenAuthenticator(
                         expectedBearerToken: bearerToken
                     ),
-                    activityStore: activityStore
+                    activityStore: activityStore,
+                    permissionStore: permissionStore
                 )
                 let receiver = LocalAgentHTTPReceiver(requestProcessor: requestProcessor)
                 localReceiver = receiver
@@ -92,6 +98,20 @@ final class AgentActivityRuntime: ObservableObject {
         localReceiver = nil
         bridgeAvailability = .unavailable
         agentRuns = []
+        claudePermissionRequests = []
+        if let permissionStore {
+            Task { await permissionStore.removeAll() }
+        }
+        permissionStore = nil
+    }
+
+    func decideClaudePermission(_ decision: ClaudePermissionDecision, requestIdentifier: UUID) async -> Bool {
+        guard bridgeAvailability == .listening, let permissionStore,
+              let notchWindow = NSApp.keyWindow as? BoringNotchSkyLightWindow,
+              notchWindow.canBecomeKey else { return false }
+        let accepted = await permissionStore.decide(decision, requestIdentifier: requestIdentifier)
+        claudePermissionRequests = await permissionStore.requests()
+        return accepted
     }
 
     private func startRefreshingAgentRuns() {
@@ -104,6 +124,10 @@ final class AgentActivityRuntime: ObservableObject {
                 let latestAgentRuns = await activityStore.agentRuns()
                 if agentRuns != latestAgentRuns {
                     agentRuns = latestAgentRuns
+                }
+                let latestPermissionRequests = await permissionStore?.requests() ?? []
+                if claudePermissionRequests != latestPermissionRequests {
+                    claudePermissionRequests = latestPermissionRequests
                 }
 
                 do {

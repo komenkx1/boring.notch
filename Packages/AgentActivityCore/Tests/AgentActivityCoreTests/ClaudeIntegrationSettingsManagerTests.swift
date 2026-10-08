@@ -28,6 +28,36 @@ final class ClaudeIntegrationSettingsManagerTests: XCTestCase {
         }
     }
 
+    func testInteractiveApprovalsAreOptInIdempotentAndReversible() throws {
+        try writeSettingsObject([
+            "model": .string("sonnet"),
+            "hooks": .object(["PermissionRequest": .array([
+                .object(["hooks": .array([.object(["type": .string("command"), "command": .string("user-permission-hook")])])])
+            ])])
+        ])
+        let manager = ClaudeIntegrationSettingsManager(locations: locations)
+        let preview = try manager.preview(statusForwardingCommand: "status", interactiveApprovals: true)
+        XCTAssertTrue(preview.renderedSettingsWithRedactedToken.contains("request-permission"))
+        XCTAssertTrue(preview.renderedSettingsWithRedactedToken.contains("<redacted>"))
+        for _ in 0..<2 {
+            _ = try manager.install(bearerToken: "fixture", statusForwardingCommand: "status", interactiveApprovals: true)
+        }
+        let interactiveSettings = try readSettingsObject()
+        let permissionGroups = interactiveSettings["hooks"]?["PermissionRequest"]
+        XCTAssertEqual(permissionGroups?[1]?["hooks"]?[0]?["args"]?[0], .string("request-permission"))
+        XCTAssertEqual(permissionGroups?[1]?["hooks"]?[0]?["timeout"], .number(55))
+        XCTAssertNil(permissionGroups?[2])
+        _ = try manager.install(bearerToken: "fixture", statusForwardingCommand: "status")
+        let observationSettings = try readSettingsObject()
+        XCTAssertEqual(observationSettings["hooks"]?["PermissionRequest"]?[1]?["hooks"]?[0]?["args"]?[0], .string("forward-hook"))
+        _ = try manager.install(bearerToken: "fixture", statusForwardingCommand: "status", interactiveApprovals: true)
+        _ = try manager.uninstall()
+        let removedSettings = try readSettingsObject()
+        XCTAssertEqual(removedSettings["hooks"]?["PermissionRequest"]?[0]?["hooks"]?[0]?["command"], .string("user-permission-hook"))
+        XCTAssertNil(removedSettings["hooks"]?["PermissionRequest"]?[1])
+        XCTAssertEqual(removedSettings["model"], .string("sonnet"))
+    }
+
     func testInstallPreservesExistingSettingsAndIsIdempotent() throws {
         let originalSettings = """
         {

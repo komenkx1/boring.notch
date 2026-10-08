@@ -102,6 +102,11 @@ struct AgentActivityView: View {
         .onChange(of: agentActivityRuntime.agentRuns.map(\.agentRunIdentifier)) {
             selectHighestPriorityRunIfNeeded()
         }
+        .onChange(of: agentActivityRuntime.claudePermissionRequests.map(\.id)) {
+            if let request = agentActivityRuntime.claudePermissionRequests.first {
+                selectedAgentRunIdentifier = request.agentRunIdentifier
+            }
+        }
         .onExitCommand {
             vm.close()
         }
@@ -135,10 +140,14 @@ struct AgentActivityView: View {
                 .frame(width: 1)
 
             if let selectedAgentRun {
-                ScrollView(.vertical) {
-                    AgentRunDetail(agentRun: selectedAgentRun)
+                ScrollViewReader { detailScroll in
+                    ScrollView(.vertical) {
+                        AgentRunDetail(agentRun: selectedAgentRun) {
+                            detailScroll.scrollTo("permission-decisions", anchor: .bottom)
+                        }
+                    }
+                    .scrollIndicators(.visible)
                 }
-                .scrollIndicators(.never)
                 .id(selectedAgentRun.agentRunIdentifier)
             }
         }
@@ -213,6 +222,16 @@ private struct AgentRunRow: View {
 
 private struct AgentRunDetail: View {
     let agentRun: AgentRun
+    let revealPermissionControls: () -> Void
+    @ObservedObject private var runtime = AgentActivityRuntime.shared
+
+    private var permissionRequest: ClaudePermissionRequest? {
+        guard agentRun.providerName == .claude, agentRun.needsAttention,
+              let attention = agentRun.pendingAttentionRequest, attention.canRespond else { return nil }
+        return runtime.claudePermissionRequests.first {
+            $0.id.uuidString == attention.requestIdentifier && $0.agentRunIdentifier == agentRun.agentRunIdentifier
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -243,6 +262,9 @@ private struct AgentRunDetail: View {
                 Text("No recent activity event. Check the session in \(agentRun.providerName.displayName).")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(AgentActivityColor.secondaryText)
+            } else if let permissionRequest {
+                ClaudePermissionView(request: permissionRequest, revealPermissionControls: revealPermissionControls)
+                    .id(permissionRequest.id)
             } else if agentRun.needsAttention {
                 Text("Respond in \(agentRun.providerName.displayName) to continue this session.")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -289,6 +311,91 @@ private struct AgentRunDetail: View {
             return "This \(providerName) session was interrupted."
         case .unknown:
             return "The current state of this \(providerName) session is unknown."
+        }
+    }
+}
+
+private struct ClaudePermissionView: View {
+    let request: ClaudePermissionRequest
+    let revealPermissionControls: () -> Void
+    @ObservedObject private var runtime = AgentActivityRuntime.shared
+    @State private var submittingDecision = false
+    @State private var errorMessage: String?
+    @FocusState private var focusedDecision: ClaudePermissionDecision?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(request.toolName) · Allow once or deny")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(AgentActivityColor.attention)
+            Text(request.workingDirectory)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(AgentActivityColor.secondaryText)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(request.toolInputJSON)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.white)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Applies to this tool request only. After 45 seconds, respond in Claude.")
+                .font(.system(size: 10))
+                .foregroundStyle(AgentActivityColor.secondaryText)
+            if request.decision != nil {
+                Text("Decision recorded. Waiting for the permission hook.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white)
+            } else {
+                HStack(spacing: 12) {
+                    decisionButton("Allow once", decision: .allow)
+                    decisionButton("Deny", decision: .deny)
+                }
+                .id("permission-decisions")
+            }
+            if submittingDecision {
+                Text("Recording decision…").font(.system(size: 11)).foregroundStyle(.white)
+            }
+            if let errorMessage {
+                Text(errorMessage).font(.system(size: 11)).foregroundStyle(.white)
+            }
+        }
+        .onChange(of: focusedDecision) {
+            if focusedDecision != nil { revealPermissionControls() }
+        }
+    }
+
+    private func decisionButton(_ title: String, decision: ClaudePermissionDecision) -> some View {
+        Button(title) { submit(decision) }
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .buttonStyle(.plain)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 44)
+            .background(AgentActivityColor.selectedSurface, in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(focusedDecision == decision ? Color.white : AgentActivityColor.secondaryText, lineWidth: 2)
+            }
+            .disabled(submittingDecision)
+            .focusable()
+            .focused($focusedDecision, equals: decision)
+            .onKeyPress(keys: [.space, .return]) { _ in
+                guard !submittingDecision else { return .ignored }
+                submit(decision)
+                return .handled
+            }
+    }
+
+    private func submit(_ decision: ClaudePermissionDecision) {
+        guard !submittingDecision else { return }
+        submittingDecision = true
+        errorMessage = nil
+        Task { @MainActor in
+            if !(await runtime.decideClaudePermission(decision, requestIdentifier: request.id)) {
+                errorMessage = "This request is no longer available. Respond in Claude."
+            }
+            submittingDecision = false
         }
     }
 }
