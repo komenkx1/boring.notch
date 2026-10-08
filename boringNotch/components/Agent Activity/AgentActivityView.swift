@@ -12,12 +12,7 @@ enum AgentActivityColor {
 
 extension AgentActivityState {
     var isActive: Bool {
-        switch self {
-        case .starting, .running, .waitingForApproval, .waitingForUser:
-            return true
-        case .completed, .failed, .interrupted:
-            return false
-        }
+        isConfirmedActive
     }
 
     var label: String {
@@ -29,6 +24,7 @@ extension AgentActivityState {
         case .completed: "Completed"
         case .failed: "Failed"
         case .interrupted: "Interrupted"
+        case .unknown: "Unknown"
         }
     }
 
@@ -41,6 +37,7 @@ extension AgentActivityState {
         case .completed: "checkmark.circle.fill"
         case .failed: "xmark.octagon.fill"
         case .interrupted: "stop.circle.fill"
+        case .unknown: "questionmark.circle"
         }
     }
 
@@ -52,7 +49,7 @@ extension AgentActivityState {
             AgentActivityColor.attention
         case .failed:
             AgentActivityColor.failed
-        case .completed, .interrupted:
+        case .completed, .interrupted, .unknown:
             AgentActivityColor.secondaryText
         }
     }
@@ -129,8 +126,11 @@ struct AgentActivityView: View {
                 .frame(width: 1)
 
             if let selectedAgentRun {
-                AgentRunDetail(agentRun: selectedAgentRun)
-                    .id(selectedAgentRun.agentRunIdentifier)
+                ScrollView(.vertical) {
+                    AgentRunDetail(agentRun: selectedAgentRun)
+                }
+                .scrollIndicators(.never)
+                .id(selectedAgentRun.agentRunIdentifier)
             }
         }
         .padding(.horizontal, 6)
@@ -173,7 +173,7 @@ private struct AgentRunRow: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
-                    Text(agentRun.activityState.label)
+                    Text("\(agentRun.providerName.displayName) · \(agentRun.activityState.label)")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundStyle(AgentActivityColor.secondaryText)
                         .lineLimit(1)
@@ -230,15 +230,19 @@ private struct AgentRunDetail: View {
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
 
-            if agentRun.pendingAttentionRequest != nil {
+            if agentRun.activityState == .unknown {
+                Text("No recent activity event. Check the session in \(agentRun.providerName.displayName).")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(AgentActivityColor.secondaryText)
+            } else if agentRun.needsAttention {
                 Text("Respond in \(agentRun.providerName.displayName) to continue this session.")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(AgentActivityColor.attention)
             }
 
-            Spacer(minLength: 0)
-
-            if agentRun.usageWindows.isEmpty {
+            if agentRun.providerName == .codex {
+                CodexAccountUsageView()
+            } else if agentRun.usageWindows.isEmpty {
                 Text("Usage unavailable for this session")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(AgentActivityColor.secondaryText)
@@ -251,9 +255,10 @@ private struct AgentRunDetail: View {
                     }
                 }
                 .scrollIndicators(.never)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var fallbackSummary: String {
@@ -273,12 +278,15 @@ private struct AgentRunDetail: View {
             return "\(providerName) could not finish this session."
         case .interrupted:
             return "This \(providerName) session was interrupted."
+        case .unknown:
+            return "The current state of this \(providerName) session is unknown."
         }
     }
 }
 
 private struct AgentUsageMeter: View {
     let usageWindow: AgentUsageWindow
+    var showsRemaining = false
 
     private var clampedUsagePercentage: Double {
         min(max(usageWindow.usedPercentage, 0), 100)
@@ -290,13 +298,14 @@ private struct AgentUsageMeter: View {
                 Text(usageWindow.windowLabel)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text(usageWindow.usedPercentage, format: .number.precision(.fractionLength(0)))
-                    + Text("%")
+                Text(showsRemaining ? 100 - clampedUsagePercentage : usageWindow.usedPercentage,
+                     format: .number.precision(.fractionLength(0)))
+                    + Text(showsRemaining ? "% left" : "% used")
             }
             .font(.system(size: 9, weight: .semibold, design: .rounded))
             .foregroundStyle(.white)
 
-            ProgressView(value: clampedUsagePercentage, total: 100)
+            ProgressView(value: showsRemaining ? 100 - clampedUsagePercentage : clampedUsagePercentage, total: 100)
                 .progressViewStyle(.linear)
                 .tint(meterColor)
 
@@ -305,7 +314,8 @@ private struct AgentUsageMeter: View {
                 .foregroundStyle(AgentActivityColor.secondaryText)
                 .lineLimit(1)
         }
-        .frame(width: 108)
+        .frame(width: showsRemaining ? 150 : 108)
+        .help(usageWindow.windowLabel)
     }
 
     private var meterColor: Color {
@@ -322,7 +332,44 @@ private struct AgentUsageMeter: View {
         guard let resetDate = usageWindow.resetsAt else {
             return "Reset unavailable"
         }
-        return "Resets \(resetDate.formatted(date: .omitted, time: .shortened))"
+        return "Resets \(resetDate.formatted(date: .abbreviated, time: .shortened))"
+    }
+}
+
+private struct CodexAccountUsageView: View {
+    @ObservedObject private var agentActivityRuntime = AgentActivityRuntime.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Codex account usage (shared)")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                Spacer(minLength: 4)
+                if let accountUsage = agentActivityRuntime.codexAccountUsage {
+                    Text("Updated \(accountUsage.fetchedAt.formatted(date: .omitted, time: .shortened))")
+                        .font(.system(size: 8, weight: .medium, design: .rounded))
+                        .foregroundStyle(AgentActivityColor.secondaryText)
+                }
+            }
+            if let accountUsage = agentActivityRuntime.codexAccountUsage, !accountUsage.usageWindows.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 12) {
+                        ForEach(accountUsage.usageWindows, id: \.windowLabel) { usageWindow in
+                            AgentUsageMeter(usageWindow: usageWindow, showsRemaining: true)
+                        }
+                    }
+                }
+                .scrollIndicators(.never)
+                .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(agentActivityRuntime.codexUsageAvailability == .loading
+                     ? "Reading account usage from Codex…"
+                     : "Account quota unavailable from Codex CLI.")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(AgentActivityColor.secondaryText)
+            }
+        }
     }
 }
 

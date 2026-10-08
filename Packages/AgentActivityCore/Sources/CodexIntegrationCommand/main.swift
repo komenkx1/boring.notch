@@ -8,6 +8,12 @@ enum CodexIntegrationCommand {
         do {
             let settingsManager = CodexIntegrationSettingsManager()
             switch command {
+            case "read-usage":
+                let accountUsage = try await CodexAccountUsageReader().readUsage()
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                encoder.dateEncodingStrategy = .iso8601
+                print(String(decoding: try encoder.encode(accountUsage), as: UTF8.self))
             case "preview":
                 print(String(decoding: try settingsManager.preview(), as: UTF8.self))
             case "install":
@@ -24,7 +30,7 @@ enum CodexIntegrationCommand {
                 await forwardHook()
                 print("{}")
             default:
-                print("Usage: boring-notch-codex-integration <preview|install|uninstall|forward-hook>")
+                print("Usage: boring-notch-codex-integration <preview|install|uninstall|forward-hook|read-usage>")
             }
         } catch {
             if command == "forward-hook" { print("{}"); return }

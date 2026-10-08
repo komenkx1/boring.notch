@@ -8,11 +8,13 @@ public enum AgentEventApplicationResult: Equatable, Sendable {
 
 public actor AgentActivityStore {
     private let maximumAssistantResponseLength: Int
+    private let activityFreshnessInterval: TimeInterval
     private var agentRunsByIdentifier: [String: AgentRun] = [:]
     private var appliedEventIdentifiers: Set<UUID> = []
 
-    public init(maximumAssistantResponseLength: Int = 4_000) {
+    public init(maximumAssistantResponseLength: Int = 4_000, activityFreshnessInterval: TimeInterval = 300) {
         self.maximumAssistantResponseLength = maximumAssistantResponseLength
+        self.activityFreshnessInterval = max(1, activityFreshnessInterval)
     }
 
     @discardableResult
@@ -74,6 +76,9 @@ public actor AgentActivityStore {
         }
 
         agentRun.lastEventAt = event.occurredAt
+        if event.eventKind != .usageUpdated {
+            agentRun.lastActivityAt = event.occurredAt
+        }
         agentRunsByIdentifier[event.agentRunIdentifier] = agentRun
         appliedEventIdentifiers.insert(event.eventIdentifier)
         return .applied
@@ -98,6 +103,15 @@ public actor AgentActivityStore {
     public func removeAll() {
         agentRunsByIdentifier.removeAll()
         appliedEventIdentifiers.removeAll()
+    }
+
+    public func reconcileActivityFreshness(at currentDate: Date = Date()) {
+        for (runIdentifier, var agentRun) in agentRunsByIdentifier {
+            guard agentRun.activityState.isConfirmedActive,
+                  currentDate.timeIntervalSince(agentRun.lastActivityAt) >= activityFreshnessInterval else { continue }
+            agentRun.activityState = .unknown
+            agentRunsByIdentifier[runIdentifier] = agentRun
+        }
     }
 
     private func applySummary(from event: AgentActivityEvent, to agentRun: inout AgentRun) {
@@ -153,7 +167,7 @@ public actor AgentActivityStore {
             return 1
         case .starting, .running:
             return 2
-        case .completed:
+        case .completed, .unknown:
             return 3
         }
     }

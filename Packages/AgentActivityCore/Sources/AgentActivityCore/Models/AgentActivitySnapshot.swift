@@ -27,7 +27,7 @@ public struct AgentRunSnapshot: Codable, Equatable, Sendable {
         activityState = agentRun.activityState
         modelLabel = agentRun.modelLabel
         repositoryLabel = agentRun.repositoryLabel
-        needsAttention = agentRun.pendingAttentionRequest != nil
+        needsAttention = agentRun.needsAttention
         usageWindows = agentRun.usageWindows
         startedAt = agentRun.startedAt
         lastEventAt = agentRun.lastEventAt

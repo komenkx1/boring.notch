@@ -115,6 +115,7 @@ public struct AgentBridgeRequestProcessor: Sendable {
             return AgentBridgeResponse(statusCode: 404)
         }
 
+        await activityStore.reconcileActivityFreshness(at: generatedAt)
         let agentRuns = await activityStore.agentRuns()
         let snapshot = AgentActivitySnapshot(
             generatedAt: generatedAt,

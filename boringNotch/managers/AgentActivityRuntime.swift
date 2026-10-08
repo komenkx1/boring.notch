@@ -8,6 +8,13 @@ enum AgentBridgeAvailability: Equatable {
     case unavailable
 }
 
+enum CodexUsageAvailability: Equatable {
+    case notInstalled
+    case loading
+    case available
+    case unavailable
+}
+
 @MainActor
 final class AgentActivityRuntime: ObservableObject {
     static let shared = AgentActivityRuntime()
@@ -15,10 +22,13 @@ final class AgentActivityRuntime: ObservableObject {
     let activityStore = AgentActivityStore()
     @Published private(set) var agentRuns: [AgentRun] = []
     @Published private(set) var bridgeAvailability: AgentBridgeAvailability = .starting
+    @Published private(set) var codexAccountUsage: CodexAccountUsage?
+    @Published private(set) var codexUsageAvailability: CodexUsageAvailability = .notInstalled
 
     private var localReceiver: LocalAgentHTTPReceiver?
     private var startupTask: Task<Void, Never>?
     private var activityRefreshTask: Task<Void, Never>?
+    private var usageRefreshTask: Task<Void, Never>?
 
     private init() {}
 
@@ -35,6 +45,7 @@ final class AgentActivityRuntime: ObservableObject {
                 let bearerToken = try installedCodexToken.flatMap { $0.isEmpty ? nil : $0 }
                     ?? AgentBridgeTokenStore().loadOrCreateToken()
                 try Task.checkCancellation()
+                await activityStore.removeAll()
                 let requestProcessor = AgentBridgeRequestProcessor(
                     tokenAuthenticator: FixedAgentBridgeTokenAuthenticator(
                         expectedBearerToken: bearerToken
@@ -48,6 +59,7 @@ final class AgentActivityRuntime: ObservableObject {
                 )
                 bridgeAvailability = .listening
                 startRefreshingAgentRuns()
+                startRefreshingCodexUsage()
                 NSLog("Agent bridge listening on 127.0.0.1:%d", listeningPort)
             } catch is CancellationError {
                 localReceiver?.stop()
@@ -72,9 +84,14 @@ final class AgentActivityRuntime: ObservableObject {
         startupTask = nil
         activityRefreshTask?.cancel()
         activityRefreshTask = nil
+        usageRefreshTask?.cancel()
+        usageRefreshTask = nil
+        codexAccountUsage = nil
+        codexUsageAvailability = .notInstalled
         localReceiver?.stop()
         localReceiver = nil
         bridgeAvailability = .unavailable
+        agentRuns = []
     }
 
     private func startRefreshingAgentRuns() {
@@ -83,6 +100,7 @@ final class AgentActivityRuntime: ObservableObject {
             guard let self else { return }
 
             while !Task.isCancelled {
+                await activityStore.reconcileActivityFreshness()
                 let latestAgentRuns = await activityStore.agentRuns()
                 if agentRuns != latestAgentRuns {
                     agentRuns = latestAgentRuns
@@ -90,6 +108,32 @@ final class AgentActivityRuntime: ObservableObject {
 
                 do {
                     try await Task.sleep(for: .milliseconds(500))
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+
+    private func startRefreshingCodexUsage() {
+        guard FileManager.default.fileExists(atPath: CodexIntegrationSettingsManager().tokenFile.path) else { return }
+        usageRefreshTask?.cancel()
+        usageRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                codexUsageAvailability = .loading
+                do {
+                    let latestAccountUsage = try await CodexAccountUsageReader().readUsage()
+                    try Task.checkCancellation()
+                    codexAccountUsage = latestAccountUsage
+                    codexUsageAvailability = latestAccountUsage.usageWindows.isEmpty ? .unavailable : .available
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    codexAccountUsage = nil
+                    codexUsageAvailability = .unavailable
+                }
+                do {
+                    try await Task.sleep(for: .seconds(300))
                 } catch {
                     return
                 }

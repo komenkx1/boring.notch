@@ -132,7 +132,7 @@ private struct AgentActivityHeaderButton: View {
     @FocusState private var hasKeyboardFocus: Bool
 
     private var attentionCount: Int {
-        agentRuns.filter { $0.pendingAttentionRequest != nil }.count
+        agentRuns.filter { $0.needsAttention }.count
     }
 
     private var activeAgentCount: Int {

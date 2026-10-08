@@ -4,6 +4,11 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 
 ## 2026-10-08
 
+- Added five-minute observation freshness, an explicit Unknown state, and fresh-event recovery without inferring process death or completion.
+- Added multi-provider concurrent receiver and restart tests, and verified live Claude/Codex completion plus a force-stopped Codex session expiring to Unknown.
+- Added read-only Codex app-server account quota reads, bounded subprocess handling, shared-account remaining percentages, and full local reset dates in the notch.
+- Kept account usage separate from session liveness and added stdio, malformed-response, missing-window, error, and timeout tests.
+- Added provider labels to run rows and scrollable detail content to preserve the existing notch header layout.
 - Added Codex CLI hook decoding, authenticated ingestion, and a previewable, reversible hook installer that preserves unrelated settings.
 - Added provider-aware notch labels and separate Codex subagent identities; hook approvals remain observational and quota remains unavailable.
 - Added a private installed-token copy for the Codex forwarder and shared app receiver, plus adapter and installer regression tests.

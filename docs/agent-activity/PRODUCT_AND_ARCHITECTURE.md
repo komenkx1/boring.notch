@@ -53,7 +53,7 @@ An agent run has:
 - zero or more usage windows
 - last event and last activity timestamps
 
-The initial activity states are `starting`, `running`, `waitingForApproval`, `waitingForUser`, `completed`, `failed`, and `interrupted`.
+The activity states are `starting`, `running`, `waitingForApproval`, `waitingForUser`, `completed`, `failed`, `interrupted`, and `unknown`. Five minutes without an activity event makes an active observation unknown; it is not proof of process death. Usage refreshes do not revive a run, and a restart does not restore unverified active sessions.
 
 ## Local bridge
 
@@ -76,7 +76,7 @@ Hook installation must merge only this fork's entries into user or project Codex
 
 ### Codex app server
 
-App server is the rich integration path for sessions launched or managed by this fork. It supports streamed thread events, approval conversations, and account rate-limit reads. This path is a later phase because it makes the app a richer Codex client and requires stricter lifecycle and error handling.
+App server supports streamed thread events, approval conversations, and account rate-limit reads. This fork now uses only a short-lived, read-only account quota connection for opt-in Codex monitoring. Quota is displayed as shared account state, independent of observed sessions. Thread launching, streaming, and approval control remain later work.
 
 ### Claude hooks
 

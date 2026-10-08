@@ -8,6 +8,14 @@ public enum AgentActivityState: String, Codable, Sendable {
     case completed
     case failed
     case interrupted
+    case unknown
+
+    public var isConfirmedActive: Bool {
+        switch self {
+        case .starting, .running, .waitingForApproval, .waitingForUser: true
+        case .completed, .failed, .interrupted, .unknown: false
+        }
+    }
 }
 
 public struct AgentRun: Codable, Equatable, Sendable, Identifiable {
@@ -26,6 +34,11 @@ public struct AgentRun: Codable, Equatable, Sendable, Identifiable {
     public var usageWindows: [AgentUsageWindow]
     public let startedAt: Date
     public var lastEventAt: Date
+    public var lastActivityAt: Date
+
+    public var needsAttention: Bool {
+        activityState.isConfirmedActive && pendingAttentionRequest != nil
+    }
 
     init(firstEvent: AgentActivityEvent) {
         agentRunIdentifier = firstEvent.agentRunIdentifier
@@ -41,5 +54,6 @@ public struct AgentRun: Codable, Equatable, Sendable, Identifiable {
         usageWindows = firstEvent.usageWindows
         startedAt = firstEvent.occurredAt
         lastEventAt = firstEvent.occurredAt
+        lastActivityAt = firstEvent.occurredAt
     }
 }
