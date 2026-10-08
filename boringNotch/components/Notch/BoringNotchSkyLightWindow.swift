@@ -95,6 +95,7 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     func enableSkyLight() {
         if !isSkyLightEnabled {
+            if isKeyWindow { resignKey() }
             SkyLightOperator.shared.delegateWindow(self)
             isSkyLightEnabled = true
         }
@@ -109,6 +110,8 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     private var observers: Set<AnyCancellable> = []
     
-    override var canBecomeKey: Bool { false }
+    override var canBecomeKey: Bool {
+        !isSkyLightEnabled && BoringViewCoordinator.shared.currentView == .agents
+    }
     override var canBecomeMain: Bool { false }
 }

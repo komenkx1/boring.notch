@@ -60,7 +60,7 @@ The decoder prefers `rateLimitsByLimitId` when supplied, otherwise uses the lega
 swift run --package-path Packages/AgentActivityCore boring-notch-codex-integration read-usage
 ```
 
-The real account quota request and its notch display were verified on 2026-10-08. Unit tests cover named and legacy buckets, null/missing windows, malformed fields, reset dates, stdio initialization order, ignored notifications, sanitized server errors, and bounded timeouts. Codex Desktop lifecycle, token-by-token streaming, and interactive approvals remain later work.
+The real account quota request and its notch display were verified on 2026-10-08. Previous/next controls provide explicit access to each usage window without relying on trackpad gestures. Live UI checks covered all three returned buckets, disabled navigation boundaries, Tab/Shift+Tab focus, Space/Enter activation, and Escape dismissal. Native accessibility scroll actions also moved the viewport; physical trackpad behavior still needs manual release QA. The notch can receive key-window focus only while Agent Activity is selected and SkyLight lock-screen mode is inactive. Unit tests cover named and legacy buckets, null/missing windows, malformed fields, reset dates, stdio initialization order, ignored notifications, sanitized server errors, and bounded timeouts. Codex Desktop lifecycle, token-by-token streaming, and interactive approvals remain later work.
 
 Contract reference: [official Codex hooks documentation](https://learn.chatgpt.com/docs/hooks).
 

@@ -4,6 +4,7 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 
 ## 2026-10-08
 
+- Added explicit previous/next quota-window navigation, visible scroll indicators, keyboard activation, and Escape dismissal. Enabled key-window focus only for Agent Activity outside lock-screen SkyLight mode.
 - Added five-minute observation freshness, an explicit Unknown state, and fresh-event recovery without inferring process death or completion.
 - Added multi-provider concurrent receiver and restart tests, and verified live Claude/Codex completion plus a force-stopped Codex session expiring to Unknown.
 - Added read-only Codex app-server account quota reads, bounded subprocess handling, shared-account remaining percentages, and full local reset dates in the notch.

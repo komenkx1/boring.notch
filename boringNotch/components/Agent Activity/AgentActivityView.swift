@@ -56,6 +56,7 @@ extension AgentActivityState {
 }
 
 struct AgentActivityView: View {
+    @EnvironmentObject private var vm: BoringViewModel
     @ObservedObject private var agentActivityRuntime = AgentActivityRuntime.shared
     @State private var selectedAgentRunIdentifier: String?
 
@@ -100,6 +101,14 @@ struct AgentActivityView: View {
         }
         .onChange(of: agentActivityRuntime.agentRuns.map(\.agentRunIdentifier)) {
             selectHighestPriorityRunIfNeeded()
+        }
+        .onExitCommand {
+            vm.close()
+        }
+        .onDisappear {
+            if let notchWindow = NSApp.keyWindow as? BoringNotchSkyLightWindow {
+                notchWindow.resignKey()
+            }
         }
     }
 
@@ -338,6 +347,11 @@ private struct AgentUsageMeter: View {
 
 private struct CodexAccountUsageView: View {
     @ObservedObject private var agentActivityRuntime = AgentActivityRuntime.shared
+    @State private var targetQuotaWindowIndex: Int? = 0
+
+    private var selectedQuotaWindowIndex: Int {
+        targetQuotaWindowIndex ?? 0
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -353,15 +367,33 @@ private struct CodexAccountUsageView: View {
                 }
             }
             if let accountUsage = agentActivityRuntime.codexAccountUsage, !accountUsage.usageWindows.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 12) {
-                        ForEach(accountUsage.usageWindows, id: \.windowLabel) { usageWindow in
-                            AgentUsageMeter(usageWindow: usageWindow, showsRemaining: true)
-                        }
+                HStack(spacing: 6) {
+                    AgentUsageNavigationButton(direction: .previous) {
+                        targetQuotaWindowIndex = selectedQuotaWindowIndex - 1
                     }
+                    .disabled(selectedQuotaWindowIndex == 0)
+
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 12) {
+                            ForEach(Array(accountUsage.usageWindows.enumerated()), id: \.offset) { windowIndex, usageWindow in
+                                AgentUsageMeter(usageWindow: usageWindow, showsRemaining: true)
+                                    .id(windowIndex)
+                            }
+                        }
+                        .scrollTargetLayout()
+                    }
+                    .scrollIndicators(.visible)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .scrollPosition(id: $targetQuotaWindowIndex, anchor: .center)
+
+                    AgentUsageNavigationButton(direction: .next) {
+                        targetQuotaWindowIndex = selectedQuotaWindowIndex + 1
+                    }
+                    .disabled(selectedQuotaWindowIndex >= accountUsage.usageWindows.count - 1)
                 }
-                .scrollIndicators(.never)
-                .fixedSize(horizontal: false, vertical: true)
+                .onChange(of: accountUsage.usageWindows.map(\.windowLabel)) {
+                    targetQuotaWindowIndex = 0
+                }
             } else {
                 Text(agentActivityRuntime.codexUsageAvailability == .loading
                      ? "Reading account usage from Codex…"
@@ -369,6 +401,50 @@ private struct CodexAccountUsageView: View {
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(AgentActivityColor.secondaryText)
             }
+        }
+    }
+}
+
+private struct AgentUsageNavigationButton: View {
+    enum Direction {
+        case previous
+        case next
+
+        var label: String {
+            self == .previous ? "Previous quota window" : "Next quota window"
+        }
+
+        var systemImage: String {
+            self == .previous ? "chevron.left" : "chevron.right"
+        }
+    }
+
+    let direction: Direction
+    let action: () -> Void
+    @Environment(\.isEnabled) private var isEnabled
+    @FocusState private var hasKeyboardFocus: Bool
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: direction.systemImage)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(isEnabled ? .white : AgentActivityColor.secondaryText)
+                .frame(width: 24, height: 34)
+                .contentShape(Rectangle())
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(hasKeyboardFocus ? Color.white : .clear, lineWidth: 2)
+                }
+        }
+        .buttonStyle(.plain)
+        .focusable()
+        .focused($hasKeyboardFocus)
+        .accessibilityLabel(direction.label)
+        .help(direction.label)
+        .onKeyPress(keys: [.space, .return]) { _ in
+            guard isEnabled else { return .ignored }
+            action()
+            return .handled
         }
     }
 }
