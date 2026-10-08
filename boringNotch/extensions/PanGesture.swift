@@ -58,7 +58,8 @@ private struct ScrollMonitor: NSViewRepresentable {
         private var monitor: Any?
         private var accumulated: CGFloat = 0
         private var active = false
-            private var endTask: Task<Void, Never>?
+        private var scrollStartedInBounds: Bool?
+        private var endTask: Task<Void, Never>?
         private let noiseThreshold: CGFloat = 0.2
 
         init(direction: PanDirection, threshold: CGFloat, action: @escaping (CGFloat, NSEvent.Phase) -> Void) {
@@ -81,14 +82,15 @@ private struct ScrollMonitor: NSViewRepresentable {
                 }
                 active = false
                 accumulated = 0
+                scrollStartedInBounds = nil
             }
         }
 
         func installMonitor(on view: NSView) {
             removeMonitor()
             monitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { [weak self, weak view] event in
-                guard let self = self, event.window === view?.window else { return event }
-                self.handleScroll(event)
+                guard let self, let view, event.window === view.window else { return event }
+                self.handleScroll(event, in: view)
                 return event
             }
         }
@@ -100,12 +102,20 @@ private struct ScrollMonitor: NSViewRepresentable {
             }
             accumulated = 0
             active = false
+            scrollStartedInBounds = nil
             endTask?.cancel()
             endTask = nil
         }
 
-        private func handleScroll(_ event: NSEvent) {
-            if event.phase == .ended || event.momentumPhase == .ended {
+        private func handleScroll(_ event: NSEvent, in view: NSView) {
+            if event.phase == .began {
+                endTask?.cancel()
+                active = false
+                accumulated = 0
+                scrollStartedInBounds = nil
+            }
+
+            if event.phase == .ended || event.phase == .cancelled || event.momentumPhase == .ended {
                 if active {
                     action(accumulated.magnitude, .ended)
                 } else {
@@ -113,8 +123,24 @@ private struct ScrollMonitor: NSViewRepresentable {
                 }
                 active = false
                 accumulated = 0
+                endTask?.cancel()
+                // Momentum belongs to the same scroll, even if the pointer crosses into the header.
+                if event.phase == .cancelled || event.momentumPhase == .ended {
+                    scrollStartedInBounds = nil
+                } else {
+                    scheduleEndTimeout()
+                }
                 return
             }
+
+            if scrollStartedInBounds == nil {
+                guard event.momentumPhase.isEmpty else { return }
+                let scrollLocation = view.convert(event.locationInWindow, from: nil)
+                let gestureBounds = view.bounds.intersection(view.visibleRect)
+                scrollStartedInBounds = !view.isHiddenOrHasHiddenAncestor && gestureBounds.contains(scrollLocation)
+            }
+            scheduleEndTimeout()
+            guard scrollStartedInBounds == true else { return }
 
             // Only consider scroll events that are primarily along the configured axis.
             let absDX = abs(event.scrollingDeltaX)
@@ -138,8 +164,6 @@ private struct ScrollMonitor: NSViewRepresentable {
             } else if active {
                 action(accumulated.magnitude, .changed)
             }
-            // Schedule a timeout to end the gesture if no further scroll events arrive.
-            scheduleEndTimeout()
         }
     }
 }

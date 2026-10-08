@@ -4,6 +4,7 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 
 ## 2026-10-08
 
+- Restricted expanded-notch close gestures to the header, leaving content scrolling independent. Scroll monitors now check their own bounds and retain the starting region through the scroll sequence, rather than observing every scroll in the window. Native content scrolling, header dismissal and Escape were exercised.
 - Fixed first-click permission actions to acquire an eligible visible notch panel instead of requiring it to already be the key window. SkyLight panels remain excluded by the existing key-capability check.
 - Verified real first-party Claude CLI PermissionRequest allow and deny exchanges through a stdio permission host: allow executed the requested local printf; deny returned the notch denial message without executing it. Desktop approval remains unverified.
 - Verified the opt-in interactive handler installed in local user settings after explicit user approval, preserving the model and unrelated configuration. A new CLI session returned the requested printf output through the installed handler.
