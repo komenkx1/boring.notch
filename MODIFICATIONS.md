@@ -4,6 +4,9 @@ This file provides a prominent summary of changes made to the upstream GPLv3 pro
 
 ## 2026-10-08
 
+- Added Codex CLI hook decoding, authenticated ingestion, and a previewable, reversible hook installer that preserves unrelated settings.
+- Added provider-aware notch labels and separate Codex subagent identities; hook approvals remain observational and quota remains unavailable.
+- Added a private installed-token copy for the Codex forwarder and shared app receiver, plus adapter and installer regression tests.
 - Added a native Agent Activity entry point to the open-notch header and a provider-neutral monitoring view for real Claude sessions, attention states, responses, and usage windows.
 - Added explicit loading, empty, and bridge-unavailable states plus keyboard and VoiceOver labels for the new controls.
 - Started the authenticated Claude receiver with the macOS application lifecycle on fixed loopback port `48763`.

@@ -79,7 +79,7 @@ struct AgentActivityView: View {
                 AgentActivityMessageView(
                     systemImage: "clock",
                     title: "Starting agent monitor",
-                    message: "Connecting to the local Claude bridge."
+                    message: "Connecting to the local agent bridge."
                 )
             case .unavailable:
                 AgentActivityUnavailableView {
@@ -89,8 +89,8 @@ struct AgentActivityView: View {
                 if agentActivityRuntime.agentRuns.isEmpty {
                     AgentActivityMessageView(
                         systemImage: "terminal",
-                        title: "No Claude sessions yet",
-                        message: "Start Claude Code in the CLI or Desktop app to see activity here."
+                        title: "No agent sessions yet",
+                        message: "Start an integrated Claude or Codex session to see activity here."
                     )
                 } else {
                     activityContent
@@ -168,7 +168,7 @@ private struct AgentRunRow: View {
                     .frame(width: 18)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(agentRun.repositoryLabel ?? "Claude session")
+                    Text(agentRun.repositoryLabel ?? "\(agentRun.providerName.displayName) session")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                         .lineLimit(1)
@@ -197,7 +197,7 @@ private struct AgentRunRow: View {
         .focusable()
         .focused($hasKeyboardFocus)
         .accessibilityLabel(
-            "\(agentRun.repositoryLabel ?? "Claude session"), \(agentRun.activityState.label)"
+            "\(agentRun.providerName.displayName), \(agentRun.repositoryLabel ?? "session"), \(agentRun.activityState.label)"
         )
     }
 }
@@ -209,7 +209,7 @@ private struct AgentRunDetail: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Claude")
+                    Text(agentRun.providerName.displayName)
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundStyle(agentRun.activityState.color)
                     Text(agentRun.modelLabel ?? "Model unavailable")
@@ -231,7 +231,7 @@ private struct AgentRunDetail: View {
                 .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
 
             if agentRun.pendingAttentionRequest != nil {
-                Text("Respond in Claude to continue this session.")
+                Text("Respond in \(agentRun.providerName.displayName) to continue this session.")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(AgentActivityColor.attention)
             }
@@ -257,21 +257,22 @@ private struct AgentRunDetail: View {
     }
 
     private var fallbackSummary: String {
+        let providerName = agentRun.providerName.displayName
         switch agentRun.activityState {
         case .starting:
-            "Claude is starting this session."
+            return "\(providerName) is starting this session."
         case .running:
-            "Claude is working."
+            return "\(providerName) is working."
         case .waitingForApproval:
-            "Claude needs permission before it can continue."
+            return "\(providerName) needs permission before it can continue."
         case .waitingForUser:
-            "Claude is waiting for your input."
+            return "\(providerName) is waiting for your input."
         case .completed:
-            "Claude finished this session."
+            return "\(providerName) finished this session."
         case .failed:
-            "Claude could not finish this session."
+            return "\(providerName) could not finish this session."
         case .interrupted:
-            "This Claude session was interrupted."
+            return "This \(providerName) session was interrupted."
         }
     }
 }
@@ -359,7 +360,7 @@ private struct AgentActivityUnavailableView: View {
             Label("Agent monitor unavailable", systemImage: "exclamationmark.triangle.fill")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(AgentActivityColor.failed)
-            Text("The local Claude bridge could not start.")
+            Text("The local agent bridge could not start.")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(AgentActivityColor.secondaryText)
             Button("Retry", action: retry)

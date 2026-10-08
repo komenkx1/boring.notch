@@ -81,6 +81,11 @@ public struct AgentBridgeRequestProcessor: Sendable {
             let normalizedEvent: AgentActivityEvent
 
             switch request.path {
+            case "/v1/hooks/codex":
+                normalizedEvent = try CodexHookEventDecoder().decodeEvent(
+                    from: request.body,
+                    receivedAt: receivedAt
+                )
             case "/v1/hooks/claude":
                 normalizedEvent = try claudeHookDecoder.decodeEvent(
                     from: request.body,

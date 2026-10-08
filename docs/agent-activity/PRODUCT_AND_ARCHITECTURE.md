@@ -122,7 +122,7 @@ Text entry in the notch requires a deliberate key-capable window state. The exis
 - Implement the authenticated local receiver and `AgentActivityStore`.
 - Add fixture-driven lifecycle, body-limit, malformed-input, and privacy-boundary tests.
 
-Stage 2 is implemented Claude-first. The runtime currently accepts documented Claude hook and status-line shapes only. Codex remains in the architecture but is intentionally deferred until the Claude path is verified end to end.
+Stage 2 was implemented Claude-first. The runtime now also accepts documented Codex command-hook events through a separate adapter. See `CODEX-RUNTIME.md` for installation and verification boundaries.
 
 ### Stage 3: provider observation
 
@@ -130,7 +130,7 @@ Stage 2 is implemented Claude-first. The runtime currently accepts documented Cl
 - Verify Claude CLI and Desktop paths separately. Report unsupported fields honestly.
 - Add opt-in Codex hooks installation and removal after the Claude path is complete.
 
-The Claude-first provider observation is implemented. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. First-party Claude CLI lifecycle, real status-line usage windows, Claude Desktop lifecycle, and a Desktop permission prompt have been exercised locally. A sanitized authenticated inspector exposes the resulting in-memory state without prompts, responses, or filesystem paths. Claude Desktop did not execute the status-line command during validation, so direct Desktop model and usage fields remain unsupported rather than inferred from private files or screen scraping. The Stage 4 notch view now consumes this state, while Codex is still intentionally deferred.
+The Claude-first provider observation is implemented. The app starts an authenticated fixed-port loopback receiver, while a previewable installer merges command hooks and a status-line forwarder into the user's existing Claude settings. First-party Claude CLI lifecycle, real status-line usage windows, Claude Desktop lifecycle, and a Desktop permission prompt have been exercised locally. A sanitized authenticated inspector exposes the resulting in-memory state without prompts, responses, or filesystem paths. Claude Desktop did not execute the status-line command during validation, so direct Desktop model and usage fields remain unsupported rather than inferred from private files or screen scraping. The Stage 4 notch view now consumes this state. Codex CLI hooks have their own reversible installer and adapter; Codex Desktop and rich app-server integration remain later work.
 
 ### Stage 4: notch experience
 

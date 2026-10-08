@@ -8,6 +8,7 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
+        .executable(name: "boring-notch-codex-integration", targets: ["CodexIntegrationCommand"]),
         .library(
             name: "AgentActivityCore",
             targets: ["AgentActivityCore"]
@@ -18,6 +19,7 @@ let package = Package(
         )
     ],
     targets: [
+        .executableTarget(name: "CodexIntegrationCommand", dependencies: ["AgentActivityCore"]),
         .target(
             name: "AgentActivityCore",
             linkerSettings: [

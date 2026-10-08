@@ -2,6 +2,14 @@ import Foundation
 
 public enum AgentProvider: String, Codable, Sendable {
     case claude
+    case codex
+
+    public var displayName: String {
+        switch self {
+        case .claude: "Claude"
+        case .codex: "Codex"
+        }
+    }
 }
 
 public enum AgentActivityEventKind: String, Codable, Sendable {

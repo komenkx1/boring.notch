@@ -30,7 +30,10 @@ final class AgentActivityRuntime: ObservableObject {
         bridgeAvailability = .starting
         startupTask = Task { @MainActor in
             do {
-                let bearerToken = try AgentBridgeTokenStore().loadOrCreateToken()
+                let installedTokenFile = CodexIntegrationSettingsManager().tokenFile
+                let installedCodexToken = try? String(contentsOf: installedTokenFile, encoding: .utf8)
+                let bearerToken = try installedCodexToken.flatMap { $0.isEmpty ? nil : $0 }
+                    ?? AgentBridgeTokenStore().loadOrCreateToken()
                 try Task.checkCancellation()
                 let requestProcessor = AgentBridgeRequestProcessor(
                     tokenAuthenticator: FixedAgentBridgeTokenAuthenticator(
@@ -45,7 +48,7 @@ final class AgentActivityRuntime: ObservableObject {
                 )
                 bridgeAvailability = .listening
                 startRefreshingAgentRuns()
-                NSLog("Claude agent bridge listening on 127.0.0.1:%d", listeningPort)
+                NSLog("Agent bridge listening on 127.0.0.1:%d", listeningPort)
             } catch is CancellationError {
                 localReceiver?.stop()
                 localReceiver = nil
@@ -53,7 +56,7 @@ final class AgentActivityRuntime: ObservableObject {
                 localReceiver?.stop()
                 localReceiver = nil
                 bridgeAvailability = .unavailable
-                NSLog("Claude agent bridge could not start: %@", String(describing: error))
+                NSLog("Agent bridge could not start: %@", String(describing: error))
             }
             startupTask = nil
         }
