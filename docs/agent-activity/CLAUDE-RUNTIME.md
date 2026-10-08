@@ -82,4 +82,4 @@ Claude Desktop was also exercised against this repository. Its coding session cr
 
 ## Experimental permission return channel
 
-An opt-in, single-use approval slice is implemented and locally fixture-tested. Live Claude approval verification is still pending authentication. See [CLAUDE-APPROVALS.md](CLAUDE-APPROVALS.md) for setup, fallback rules and the exact validation boundary. The default integration remains observational.
+An opt-in, single-use approval slice is implemented and verified through real first-party Claude CLI PermissionRequest exchanges with a stdio permission host, plus local fixtures. Desktop's approval return channel remains unverified. See [CLAUDE-APPROVALS.md](CLAUDE-APPROVALS.md) for setup, fallback rules and the exact validation boundary. The default integration remains observational.

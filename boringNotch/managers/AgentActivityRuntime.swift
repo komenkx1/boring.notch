@@ -107,8 +107,9 @@ final class AgentActivityRuntime: ObservableObject {
 
     func decideClaudePermission(_ decision: ClaudePermissionDecision, requestIdentifier: UUID) async -> Bool {
         guard bridgeAvailability == .listening, let permissionStore,
-              let notchWindow = NSApp.keyWindow as? BoringNotchSkyLightWindow,
-              notchWindow.canBecomeKey else { return false }
+              let notchWindow = NSApp.windows.compactMap({ $0 as? BoringNotchSkyLightWindow })
+                .first(where: { $0.isVisible && $0.canBecomeKey }) else { return false }
+        notchWindow.makeKey()
         let accepted = await permissionStore.decide(decision, requestIdentifier: requestIdentifier)
         claudePermissionRequests = await permissionStore.requests()
         return accepted

@@ -16,7 +16,7 @@ Start a new Claude session that loads these settings, with Boring Notch running.
 
 To return to observation only, run the same install command without `--interactive-approvals`. To remove the integration, use `uninstall`. The installer preserves unrelated hook handlers, keeps the existing status-line wrapper behavior and one-time backup, and recognizes both owned forwarding commands during removal. Preview does not change settings.
 
-Interactive mode changes only the owned PermissionRequest handler to `request-permission`, with a 55-second hook timeout. Other owned hooks remain observational. Interactive mode has not been enabled globally during this slice's verification.
+Interactive mode changes only the owned PermissionRequest handler to `request-permission`, with a 55-second hook timeout. Other owned hooks remain observational. After explicit user opt-in, interactive mode was installed in the local user settings and verified with a new CLI session loading those settings. This is a local activation, not a change to the installer's default.
 
 ## Request flow
 
@@ -29,7 +29,7 @@ The initial tool set is Bash, Read, Write, Edit, Glob and Grep. Unsupported inpu
 
 Tickets expire after 45 seconds and require polling within three seconds. The client stops waiting after 44 seconds, allowing margin before hook cancellation. Transport failure, cancellation, replacement, lifecycle events and app restart return no permission decision. With no decision, Claude controls its usual permission flow, which may deny in noninteractive mode. The UI removes controls once the ticket is absent, directing the user back to Claude. It does not infer process death from missed polling.
 
-The native action requires a key-capable notch panel, using the existing restriction that excludes SkyLight lock-screen mode. Lock-screen runtime behavior has not been tested.
+The native action acquires a visible key-capable notch panel before recording a decision, using the existing restriction that excludes SkyLight lock-screen mode. It does not require the panel to already be the key window, so the first mouse click after opening works. Lock-screen runtime behavior has not been tested.
 
 ## Transport and privacy
 
@@ -39,7 +39,13 @@ Full tool inputs stay in bounded memory until ticket removal. They are not inclu
 
 ## Verification boundary
 
-The macOS Debug build, package tests, actual loopback command round-trip, and native button/keyboard fixture flows were exercised. Fixture sessions are explicitly labeled FIXTURE. The installed first-party Claude binary is version 2.1.284. During the permission-host live test it reported no login, so a live Claude tool execution receiving a notch decision has not been verified. Claude Desktop's approval return channel is also unverified. Do not promote this slice as live-provider approval support until both sides of a real permission exchange are observed.
+The macOS Debug build, 43 package tests, actual loopback command round-trip, and native button/keyboard fixture flows were exercised. Fixture sessions are explicitly labeled FIXTURE. The installed first-party Claude binary is version 2.1.284.
+
+After login was available, a real Claude CLI run using claude-haiku-4-5, manual permissions, stream-json and a stdio permission host produced a PermissionRequest in the notch. Clicking Allow once returned a decision to Claude and the Bash tool produced the exact output notch-live-allow-confirmed. A separate run requesting printf notch-live-deny-must-not-run received Deny: the tool result contained the notch denial message, is_error was true, and the final provider result listed the permission denial. Neither test installed global interactive settings or created permanent permission rules.
+
+The earlier test was blocked by missing authentication; that is historical evidence rather than the current CLI boundary. These live tests verify the CLI permission-host path, not every ordinary terminal launch mode. Claude Desktop's approval return channel remains unverified.
+
+The installed global handler was also exercised through a new session using the user settings source. Allow once returned the exact Bash output notch-global-hook-retest with is_error false and no permission denials. A preceding global smoke test expired before a UI decision; it is not counted as a successful approval. Installation preserved the existing sonnet model and all settings except the owned PermissionRequest arguments and timeout, verified by comparing normalized settings hashes. No permanent permission rules were added.
 
 The decision shape follows [Claude's official hook reference](https://code.claude.com/docs/en/hooks#permissionrequest-decision-control).
 
