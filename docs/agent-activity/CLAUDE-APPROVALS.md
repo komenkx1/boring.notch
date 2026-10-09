@@ -1,6 +1,6 @@
 # Experimental Claude tool approvals
 
-This slice adds a single-use PermissionRequest return channel. It does not send chat messages, answer AskUserQuestion, approve sandbox network prompts, or add permanent permission rules. Codex interaction is unchanged.
+This slice adds a single-use PermissionRequest return channel. It does not send chat messages, approve sandbox network prompts, or add permanent permission rules. A separate opt-in PreToolUse channel answers AskUserQuestion; see [CLAUDE-QUESTIONS.md](CLAUDE-QUESTIONS.md). Codex interaction is unchanged.
 
 ## Opt-in setup
 
@@ -16,7 +16,9 @@ Start a new Claude session that loads these settings, with Boring Notch running.
 
 To return to observation only, run the same install command without `--interactive-approvals`. To remove the integration, use `uninstall`. The installer preserves unrelated hook handlers, keeps the existing status-line wrapper behavior and one-time backup, and recognizes both owned forwarding commands during removal. Preview does not change settings.
 
-Interactive mode changes only the owned PermissionRequest handler to `request-permission`, with a 55-second hook timeout. Other owned hooks remain observational. After explicit user opt-in, interactive mode was installed in the local user settings and verified with a new CLI session loading those settings. This is a local activation, not a change to the installer's default.
+If interactive questions are already enabled, retain `--interactive-questions` when previewing or installing approvals. An install sets both interactive modes from the flags in that invocation.
+
+Interactive approval mode changes only the owned PermissionRequest handler to `request-permission`, with a 55-second hook timeout. Other owned hooks remain observational unless interactive questions are separately enabled. After explicit user opt-in, interactive approval mode was installed in the local user settings and verified with a new CLI session loading those settings. This is a local activation, not a change to the installer's default.
 
 ## Request flow
 

@@ -2,6 +2,14 @@
 
 This file provides a prominent summary of changes made to the upstream GPLv3 project. Git history remains the detailed record.
 
+## 2026-10-09
+
+- Added an experimental, separately opt-in Claude AskUserQuestion response path using the documented PreToolUse updatedInput format, preserving the original questions and other input fields.
+- Added a native question form for typed, single-choice and multi-choice answers, explicit submission, keyboard focus scrolling, typing-aware hover behavior, and fallback to Claude without a synthesized answer.
+- Reused authenticated loopback tickets with native-only answer recording, bounded forms, single-use responses, three-minute expiry, polling freshness and lifecycle cancellation. Full question content and answers remain outside activity snapshots.
+- Added question model, transport, privacy and installer tests, with reversible settings updates that preserve unrelated hooks and the model. Live first-party Claude CLI accepted native written and selected answers through a stdio permission host; Desktop question replies remain unverified.
+- Documented setup, unsupported HTML-preview fallback, privacy, verification limits and GPLv3 source-distribution requirements. No binary release was published.
+
 ## 2026-10-08
 
 - Restricted expanded-notch close gestures to the header, leaving content scrolling independent. Scroll monitors now check their own bounds and retain the starting region through the scroll sequence, rather than observing every scroll in the window. Native content scrolling, header dismissal and Escape were exercised.

@@ -23,7 +23,8 @@ enum ClaudeIntegrationCommand {
         case "preview":
             let changeSummary = try settingsManager.preview(
                 statusForwardingCommand: statusForwardingCommand,
-                interactiveApprovals: arguments.contains("--interactive-approvals")
+                interactiveApprovals: arguments.contains("--interactive-approvals"),
+                interactiveQuestions: arguments.contains("--interactive-questions")
             )
             print("Hooks to add: \(changeSummary.hookEventsAdded.joined(separator: ", "))")
             print("Existing hook groups preserved: \(changeSummary.preservedHookGroupCount)")
@@ -38,7 +39,8 @@ enum ClaudeIntegrationCommand {
             let installationReport = try settingsManager.install(
                 bearerToken: bearerToken,
                 statusForwardingCommand: statusForwardingCommand,
-                interactiveApprovals: arguments.contains("--interactive-approvals")
+                interactiveApprovals: arguments.contains("--interactive-approvals"),
+                interactiveQuestions: arguments.contains("--interactive-questions")
             )
             print("Claude integration installed.")
             print("Settings: \(installationReport.settingsFile.path)")
@@ -72,6 +74,19 @@ enum ClaudeIntegrationCommand {
                let hookOutput = try? decision.hookOutput() {
                 FileHandle.standardOutput.write(hookOutput)
             }
+        case "request-question":
+            guard let hookBody = try? readStandardInput(maximumLength: 65_536),
+                  let hook = try? JSONDecoder().decode(JSONValue.self, from: hookBody) else { return }
+            guard hook["hook_event_name"] == .string("PreToolUse"), hook["tool_name"] == .string("AskUserQuestion") else {
+                await sendAgentPayload(hookBody, to: AgentBridgeConfiguration.claudeHookEndpoint)
+                return
+            }
+            guard let toolInput = hook["tool_input"],
+                  let questionnaire = try? ClaudeQuestionnaire(toolInput: toolInput),
+                  let bearerToken = ProcessInfo.processInfo.environment[AgentBridgeConfiguration.claudeTokenEnvironmentName],
+                  let answers = await ClaudePermissionClient().requestAnswers(hookBody: hookBody, bearerToken: bearerToken),
+                  let hookOutput = try? questionnaire.hookOutput(answers: answers) else { return }
+            FileHandle.standardOutput.write(hookOutput)
         case "inspect":
             try await printActivitySnapshot(using: settingsManager)
         case "help", "--help", "-h":
@@ -201,6 +216,7 @@ enum ClaudeIntegrationCommand {
               forward-status  Internal status-line forwarding command.
 
             Add --interactive-approvals to preview or install to enable single-use Claude tool approvals.
+            Add --interactive-questions to preview or install to answer AskUserQuestion in the notch.
             """
         )
     }

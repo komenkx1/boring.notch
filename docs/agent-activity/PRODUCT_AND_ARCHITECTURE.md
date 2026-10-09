@@ -84,6 +84,8 @@ Claude hooks provide lifecycle, permission, tool, subagent, notification, and st
 
 An experimental PermissionRequest return channel now adds opt-in, single-use native approvals for a bounded set of tools. Its command/loopback/UI round-trip is fixture-tested and real first-party Claude CLI allow/deny exchanges were verified with a stdio permission host. Desktop approval validation remains pending. Default hooks stay observational. See `CLAUDE-APPROVALS.md` for the protocol, timeout and verification boundaries.
 
+A separate opt-in `PreToolUse` channel now answers Claude `AskUserQuestion` through the documented `updatedInput.answers` format. The native form supports written, single-choice and multi-choice answers with single-use bounded tickets. Real first-party CLI exchanges were verified with a stdio permission host and isolated settings. This does not send new prompts, and Desktop question responses remain unverified. See `CLAUDE-QUESTIONS.md` for setup and limits.
+
 ### Claude status line
 
 The status-line input can provide workspace, model, context, and account usage-window snapshots when Claude supplies them. The integration should tee only the required fields into the local bridge and preserve the user's existing status-line behavior.
@@ -100,6 +102,8 @@ The compact notch shows only the highest priority signal:
 The expanded view will list active runs and show provider, task summary, elapsed time, attention state, and usage windows. Approval controls appear only when the provider path supports a safe response channel. Observational hook events must never render a control that pretends it can approve a request.
 
 Text entry in the notch requires a deliberate key-capable window state. The existing non-activating window behavior must remain for passive display and change only while the user is interacting with a supported prompt.
+
+Answer fields appear only for a live supported questionnaire, not merely an observational question notification. Every question requires an explicit answer. Missing, expired or unsupported forms direct the user back to the provider instead of exposing a non-functional composer.
 
 ## Privacy defaults
 

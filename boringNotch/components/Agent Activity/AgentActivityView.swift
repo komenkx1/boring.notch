@@ -142,9 +142,9 @@ struct AgentActivityView: View {
             if let selectedAgentRun {
                 ScrollViewReader { detailScroll in
                     ScrollView(.vertical) {
-                        AgentRunDetail(agentRun: selectedAgentRun) {
-                            detailScroll.scrollTo("permission-decisions", anchor: .bottom)
-                        }
+                        AgentRunDetail(agentRun: selectedAgentRun,
+                            revealPermissionControls: { detailScroll.scrollTo("permission-decisions", anchor: .bottom) },
+                            revealQuestionField: { detailScroll.scrollTo($0, anchor: .bottom) })
                     }
                     .scrollIndicators(.visible)
                 }
@@ -223,6 +223,7 @@ private struct AgentRunRow: View {
 private struct AgentRunDetail: View {
     let agentRun: AgentRun
     let revealPermissionControls: () -> Void
+    let revealQuestionField: (String) -> Void
     @ObservedObject private var runtime = AgentActivityRuntime.shared
 
     private var permissionRequest: ClaudePermissionRequest? {
@@ -263,8 +264,14 @@ private struct AgentRunDetail: View {
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(AgentActivityColor.secondaryText)
             } else if let permissionRequest {
-                ClaudePermissionView(request: permissionRequest, revealPermissionControls: revealPermissionControls)
-                    .id(permissionRequest.id)
+                if let questionnaire = permissionRequest.questionnaire {
+                    ClaudeQuestionView(request: permissionRequest, questionnaire: questionnaire,
+                                       revealField: revealQuestionField)
+                        .id(permissionRequest.id)
+                } else {
+                    ClaudePermissionView(request: permissionRequest, revealPermissionControls: revealPermissionControls)
+                        .id(permissionRequest.id)
+                }
             } else if agentRun.needsAttention {
                 Text("Respond in \(agentRun.providerName.displayName) to continue this session.")
                     .font(.system(size: 10, weight: .medium, design: .rounded))

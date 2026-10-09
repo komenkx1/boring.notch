@@ -58,6 +58,34 @@ final class ClaudeIntegrationSettingsManagerTests: XCTestCase {
         XCTAssertEqual(removedSettings["model"], .string("sonnet"))
     }
 
+    func testQuestionHookIsOptInPreservesOtherHandlersAndCanBeRemoved() throws {
+        let userHook = JSONValue.object(["matcher": .string("AskUserQuestion"), "hooks": .array([
+            .object(["type": .string("command"), "command": .string("user-question-hook")])
+        ])])
+        try writeSettingsObject(["model": .string("sonnet"), "hooks": .object(["PreToolUse": .array([userHook])])])
+        let manager = ClaudeIntegrationSettingsManager(locations: locations)
+        let preview = try manager.preview(statusForwardingCommand: "status", interactiveApprovals: true, interactiveQuestions: true)
+        XCTAssertTrue(preview.renderedSettingsWithRedactedToken.contains("request-question"))
+        XCTAssertNil(try readSettingsObject()["hooks"]?["PreToolUse"]?[1])
+        for _ in 0..<2 {
+            _ = try manager.install(bearerToken: "fixture", statusForwardingCommand: "status", interactiveApprovals: true, interactiveQuestions: true)
+        }
+        let enabled = try readSettingsObject()
+        XCTAssertEqual(enabled["hooks"]?["PreToolUse"]?[0], userHook)
+        XCTAssertEqual(enabled["hooks"]?["PreToolUse"]?[1]?["hooks"]?[0]?["args"]?[0], .string("request-question"))
+        XCTAssertEqual(enabled["hooks"]?["PreToolUse"]?[1]?["hooks"]?[0]?["timeout"], .number(190))
+        XCTAssertNil(enabled["hooks"]?["PreToolUse"]?[2])
+        XCTAssertEqual(enabled["hooks"]?["PermissionRequest"]?[0]?["hooks"]?[0]?["args"]?[0], .string("request-permission"))
+        _ = try manager.install(bearerToken: "fixture", statusForwardingCommand: "status", interactiveApprovals: true)
+        XCTAssertEqual(try readSettingsObject()["hooks"]?["PreToolUse"]?[1]?["hooks"]?[0]?["args"]?[0], .string("forward-hook"))
+        _ = try manager.install(bearerToken: "fixture", statusForwardingCommand: "status", interactiveQuestions: true)
+        _ = try manager.uninstall()
+        let removed = try readSettingsObject()
+        XCTAssertEqual(removed["hooks"]?["PreToolUse"]?[0], userHook)
+        XCTAssertNil(removed["hooks"]?["PreToolUse"]?[1])
+        XCTAssertEqual(removed["model"], .string("sonnet"))
+    }
+
     func testInstallPreservesExistingSettingsAndIsIdempotent() throws {
         let originalSettings = """
         {

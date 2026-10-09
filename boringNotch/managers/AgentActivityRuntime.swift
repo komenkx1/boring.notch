@@ -115,6 +115,23 @@ final class AgentActivityRuntime: ObservableObject {
         return accepted
     }
 
+    func answerClaudeQuestions(_ answers: [String: String], requestIdentifier: UUID) async -> Bool {
+        guard bridgeAvailability == .listening, let permissionStore,
+              let notchWindow = NSApp.windows.compactMap({ $0 as? BoringNotchSkyLightWindow })
+                .first(where: { $0.isVisible && $0.canBecomeKey }) else { return false }
+        notchWindow.makeKey()
+        let accepted = await permissionStore.answerQuestions(answers, requestIdentifier: requestIdentifier)
+        claudePermissionRequests = await permissionStore.requests()
+        return accepted
+    }
+
+    func returnQuestionsToClaude(requestIdentifier: UUID) async -> Bool {
+        guard bridgeAvailability == .listening, let permissionStore else { return false }
+        let accepted = await permissionStore.returnQuestionsToClaude(requestIdentifier: requestIdentifier)
+        claudePermissionRequests = await permissionStore.requests()
+        return accepted
+    }
+
     private func startRefreshingAgentRuns() {
         activityRefreshTask?.cancel()
         activityRefreshTask = Task { @MainActor [weak self] in
